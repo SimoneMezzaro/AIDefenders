@@ -1,16 +1,18 @@
 package org.codedefenders.smartassistant;
 
-import com.google.gson.Gson;
-import org.codedefenders.configuration.Configuration;
-import org.codedefenders.smartassistant.response.objects.ChatGPTCompletion;
-import org.codedefenders.smartassistant.response.objects.ChatGPTMessage;
-
-import javax.inject.Inject;
 import java.io.IOException;
 import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+
+import javax.inject.Inject;
+
+import org.codedefenders.configuration.Configuration;
+import org.codedefenders.smartassistant.response.objects.ChatGPTCompletion;
+import org.codedefenders.smartassistant.response.objects.ChatGPTMessage;
+
+import com.google.gson.Gson;
 
 public class ChatGPTRequestDispatcher {
     private final String openaiAPIKey;

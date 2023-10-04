@@ -1,7 +1,8 @@
 package org.codedefenders.smartassistant;
 
-import com.google.gson.Gson;
-import org.codedefenders.util.Paths;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
@@ -9,9 +10,10 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+
+import org.codedefenders.util.Paths;
+
+import com.google.gson.Gson;
 
 @WebServlet(Paths.SMART_ASSISTANT)
 public class AssistantServlet extends HttpServlet {

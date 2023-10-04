@@ -1,9 +1,9 @@
 package org.codedefenders.smartassistant;
 
+import javax.inject.Inject;
+
 import org.codedefenders.smartassistant.response.objects.ChatGPTMessage;
 import org.codedefenders.smartassistant.response.objects.ChatGPTRole;
-
-import javax.inject.Inject;
 
 public class AssistantService {
     @Inject
