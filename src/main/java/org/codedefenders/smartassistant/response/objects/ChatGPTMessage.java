@@ -1,12 +1,17 @@
 package org.codedefenders.smartassistant.response.objects;
 
 public class ChatGPTMessage {
-    private final ChatGPTRole role;
-    private final String content;
+    private ChatGPTRole role;
+    private String content;
+
+    public ChatGPTMessage() { }
 
     public ChatGPTMessage(ChatGPTRole role, String content) {
         this.role = role;
         this.content = content;
     }
 
+    public String getContent() {
+        return content;
+    }
 }

@@ -9,4 +9,12 @@ public class ChatGPTCompletion {
         private String model;
         private List<ChatGPTChoice> choices;
         private ChatGPTCompletionUsage usage;
+
+        public ChatGPTChoice getFirstChoice() {
+            return choices.get(0);
+        }
+
+        public String getFirstChoiceMessageContent() {
+            return getFirstChoice().getMessageContent();
+        }
 }

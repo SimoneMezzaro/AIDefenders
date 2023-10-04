@@ -22,7 +22,7 @@ public class ChatGPTRequestDispatcher {
         model = config.getOpenaiChatgptModel();
     }
 
-    public ChatGPTCompletion SendChatCompletionRequest(ChatGPTMessage message) {
+    public ChatGPTCompletion sendChatCompletionRequest(ChatGPTMessage message) {
         Gson gson = new Gson();
         HttpClient client = HttpClient.newBuilder().build();
         ChatGPTCompletion completion = null;
