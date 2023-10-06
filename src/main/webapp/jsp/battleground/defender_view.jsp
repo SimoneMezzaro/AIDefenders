@@ -105,6 +105,9 @@
 
 <%-- -------------------------------------------------------------------------------- --%>
 
+<div class="row">
+    <jsp:include page="../game_components/assistant_view.jsp"/>
+</div>
 
 <div class="row">
     <div class="col-xl-6 col-12" id="cut-div">
