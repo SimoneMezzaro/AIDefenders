@@ -1,25 +1,36 @@
 
+<link href="${url.forPath("/css/specific/smart_assistant.css")}" rel="stylesheet">
+
 <div>
-    <div class="col-xl-6 col-12" id="chat-div">
-        <div class="game-component-header">
-            <h3>Smart Assistant</h3>
-        </div>
-        <form id="new-question">
-            <div>
-                <textarea id="current-question" name="question" placeholder="Write your question here" style="width: 100%"></textarea>
+    <div class="game-component-header">
+        <h3>Smart Assistant</h3>
+    </div>
+    <div id="new-question">
+        <form>
+            <div class="card game-component-resize assistant-container">
+                <textarea id="current-question" name="question" placeholder="Write your question here" class="card-body"></textarea>
             </div>
-            <input id="sub-question-btn" type="submit" class="btn btn-defender btn-highlight" value="Submit" disabled>
+            <div class="assistant-buttons-right-container">
+                <input id="sub-question-btn" type="submit" class="btn assistant-button" value="Submit" disabled>
+            </div>
         </form>
-        <div id="question-answer" hidden>
-            <div id="last-question">
-            </div>
-            <div id="last-answer">
-            </div>
-            <button id="new-question-btn" class="btn btn-defender btn-highlight">New Question</button>
-        </div>
     </div>
 
-    <div class="col-xl-6 col-12" id="questions-div"></div>
+    <div id="last-question" hidden>
+        <div class="card game-component-resize assistant-container">
+            <div class="card-header">
+                <b>Question: </b>
+                <p id="last-question-text"></p>
+            </div>
+            <div class="card-body">
+                <b>Answer: </b>
+                <p id="last-answer-text"></p>
+            </div>
+        </div>
+        <div class="assistant-buttons-right-container">
+            <button id="new-question-btn" class="btn assistant-button">New Question</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -28,7 +39,7 @@
         request.onreadystatechange = () => {
             callBack(request);
         }
-        request.open("POST",url);
+        request.open("POST", url);
         if(contentType !== null) {
             request.setRequestHeader("Content-Type", contentType);
         }
@@ -38,10 +49,10 @@
     (function() {
 
         var currentQuestionManager = new CurrentQuestionManager();
+        var newQuestionBox = document.getElementById("new-question");
         var currentQuestionBox = document.getElementById("current-question")
         var submitButton = document.getElementById("sub-question-btn");
-        var lastQuestionBox = document.getElementById("last-question");
-        var lastAnswerBox = document.getElementById("last-answer");
+        var lastQuestionBox = document.getElementById("last-question")
         var newButton = document.getElementById("new-question-btn");
 
         currentQuestionManager.registerEvents();
@@ -84,16 +95,16 @@
             }
 
             this.displayAnswer = function(question, answer) {
-                lastQuestionBox.textContent = question;
-                lastAnswerBox.textContent = answer;
-                document.getElementById("new-question").hidden = true;
-                document.getElementById("question-answer").hidden = false;
+                document.getElementById("last-question-text").textContent = question;
+                document.getElementById("last-answer-text").textContent = answer;
+                newQuestionBox.hidden = true;
+                lastQuestionBox.hidden = false;
             }
 
             this.newQuestion = function() {
                 currentQuestionBox.value = "";
-                document.getElementById("question-answer").hidden = true;
-                document.getElementById("new-question").hidden = false;
+                lastQuestionBox.hidden = true;
+                newQuestionBox.hidden = false;
             }
         }
 
