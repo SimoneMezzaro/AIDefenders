@@ -1,4 +1,10 @@
 
+<%@ page import="org.codedefenders.game.multiplayer.MultiplayerGame" %>
+
+<%
+    MultiplayerGame game = (MultiplayerGame) request.getAttribute("game");
+%>
+
 <link href="${url.forPath("/css/specific/smart_assistant.css")}" rel="stylesheet">
 
 <div>
@@ -10,6 +16,7 @@
             <div class="card game-component-resize assistant-container">
                 <textarea id="current-question" name="question" placeholder="Write your question here" class="card-body"></textarea>
             </div>
+            <input id="assistant-game-id" type="hidden" name="gameId" value="<%= game.getId() %>">
             <div class="assistant-buttons-right-container">
                 <input id="sub-question-btn" type="submit" class="btn assistant-button" value="Submit" disabled>
             </div>
@@ -33,8 +40,8 @@
     </div>
 </div>
 
-<script>
-    function makePostRequest(url, contentType, body, callBack) {
+<script type="module">
+    async function makePostRequest(url, contentType, body, callBack) {
         var request = new XMLHttpRequest();
         request.onreadystatechange = () => {
             callBack(request);
@@ -72,17 +79,40 @@
                 submitButton.addEventListener("click", (e) => {
                     e.preventDefault();
                     let question = currentQuestionBox.value.trim();
+                    let gameId = document.getElementById("assistant-game-id").value;
+                    let body = "question=" + question + "&gameId=" + gameId;
                     if(question !== "") {
-                        currentQuestionBox.value = "";
-                        //TODO: add loading between question and answer
-                        makePostRequest("/assistant", "application/x-www-form-urlencoded", "question=" + question, (request) => {
+                        makePostRequest("/assistant", "application/x-www-form-urlencoded", body, (request) => {
                             if(request.readyState === XMLHttpRequest.DONE) {
                                 if(request.status === 200) {
-                                    var body = JSON.parse(request.responseText);
-                                    this.displayAnswer(question, body.answer);
+                                    let responseBody = request.responseText;
+                                    let bodyType = request.getResponseHeader("Content-Type");
+                                    if(bodyType === "application/json;charset=UTF-8") {
+                                        responseBody = JSON.parse(responseBody);
+                                        if(responseBody.redirect === undefined) {
+                                            this.displayAnswer(responseBody.question, responseBody.answer);
+                                        }
+                                        else {
+                                            window.location.replace(responseBody.redirect);
+                                        }
+                                    }
+                                    else {
+                                        history.replaceState(null, "", request.responseURL);
+                                        document.open();
+                                        document.write(responseBody);
+                                        document.close();
+                                        // The browser back button appears to go back 2 times since the displayed html
+                                        // is not in a real new page
+                                    }
                                 }
                                 else {
-                                    //TODO: manage errors
+                                    let responseBody = request.responseText;
+                                    history.replaceState(null, "", "/assistant");
+                                    document.open();
+                                    document.write(responseBody);
+                                    document.close();
+                                    // The back button appears to go back 2 times since the error page is not really a
+                                    // new page
                                 }
                             }
                         });
@@ -103,6 +133,7 @@
 
             this.newQuestion = function() {
                 currentQuestionBox.value = "";
+                submitButton.disabled = true;
                 lastQuestionBox.hidden = true;
                 newQuestionBox.hidden = false;
             }

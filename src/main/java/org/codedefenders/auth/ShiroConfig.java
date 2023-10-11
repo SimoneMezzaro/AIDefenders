@@ -169,6 +169,10 @@ public class ShiroConfig {
         fcMan.createChain("/classroom/**", "authc");
         fcMan.createChain("/classrooms", "authc");
 
+        // Smart assistant URLs
+        // org.codedefenders.util.Paths.SMART_ASSISTANT = /assistant
+        fcMan.createChain("/assistant", "authc");
+
         PathMatchingFilterChainResolver resolver = new PathMatchingFilterChainResolver();
         resolver.setFilterChainManager(fcMan);
         return resolver;
