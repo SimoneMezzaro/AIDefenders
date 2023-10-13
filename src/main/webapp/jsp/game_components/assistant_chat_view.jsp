@@ -40,7 +40,7 @@
     </div>
 </div>
 
-<script type="module">
+<script>
     async function makePostRequest(url, contentType, body, callBack) {
         var request = new XMLHttpRequest();
         request.onreadystatechange = () => {
@@ -53,91 +53,88 @@
         request.send(body);
     }
 
-    (function() {
+    var currentQuestionManager = new CurrentQuestionManager();
+    var newQuestionBox = document.getElementById("new-question");
+    var currentQuestionBox = document.getElementById("current-question")
+    var submitButton = document.getElementById("sub-question-btn");
+    var lastQuestionBox = document.getElementById("last-question")
+    var newButton = document.getElementById("new-question-btn");
 
-        var currentQuestionManager = new CurrentQuestionManager();
-        var newQuestionBox = document.getElementById("new-question");
-        var currentQuestionBox = document.getElementById("current-question")
-        var submitButton = document.getElementById("sub-question-btn");
-        var lastQuestionBox = document.getElementById("last-question")
-        var newButton = document.getElementById("new-question-btn");
+    currentQuestionManager.registerEvents();
 
-        currentQuestionManager.registerEvents();
+    function CurrentQuestionManager() {
+        this.registerEvents = function() {
+            currentQuestionBox.addEventListener("input", () => {
+                let question = currentQuestionBox.value.trim();
+                if(question === "") {
+                    submitButton.disabled = true;
+                }
+                else {
+                    submitButton.disabled = false;
+                }
+            });
 
-        function CurrentQuestionManager() {
-            this.registerEvents = function() {
-                currentQuestionBox.addEventListener("input", () => {
-                    let question = currentQuestionBox.value.trim();
-                    if(question === "") {
-                        submitButton.disabled = true;
-                    }
-                    else {
-                        submitButton.disabled = false;
-                    }
-                });
-
-                submitButton.addEventListener("click", (e) => {
-                    e.preventDefault();
-                    let question = currentQuestionBox.value.trim();
-                    let gameId = document.getElementById("assistant-game-id").value;
-                    let body = "question=" + question + "&gameId=" + gameId;
-                    if(question !== "") {
-                        makePostRequest("/assistant", "application/x-www-form-urlencoded", body, (request) => {
-                            if(request.readyState === XMLHttpRequest.DONE) {
-                                if(request.status === 200) {
-                                    let responseBody = request.responseText;
-                                    let bodyType = request.getResponseHeader("Content-Type");
-                                    if(bodyType === "application/json;charset=UTF-8") {
-                                        responseBody = JSON.parse(responseBody);
-                                        if(responseBody.redirect === undefined) {
-                                            this.displayAnswer(responseBody.question, responseBody.answer);
-                                        }
-                                        else {
-                                            window.location.replace(responseBody.redirect);
-                                        }
+            submitButton.addEventListener("click", (e) => {
+                e.preventDefault();
+                let question = currentQuestionBox.value.trim();
+                let gameId = document.getElementById("assistant-game-id").value;
+                let body = "question=" + question + "&gameId=" + gameId;
+                if(question !== "") {
+                    makePostRequest("/assistant", "application/x-www-form-urlencoded", body, (request) => {
+                        if(request.readyState === XMLHttpRequest.DONE) {
+                            if(request.status === 200) {
+                                let responseBody = request.responseText;
+                                let bodyType = request.getResponseHeader("Content-Type");
+                                if(bodyType === "application/json;charset=UTF-8") {
+                                    responseBody = JSON.parse(responseBody);
+                                    if(responseBody.redirect === undefined) {
+                                        this.displayAnswer(responseBody.question, responseBody.answer);
                                     }
                                     else {
-                                        history.replaceState(null, "", request.responseURL);
-                                        document.open();
-                                        document.write(responseBody);
-                                        document.close();
-                                        // The browser back button appears to go back 2 times since the displayed html
-                                        // is not in a real new page
+                                        window.location.replace(responseBody.redirect);
                                     }
                                 }
                                 else {
-                                    let responseBody = request.responseText;
-                                    history.replaceState(null, "", "/assistant");
+                                    history.replaceState(null, "", request.responseURL);
                                     document.open();
                                     document.write(responseBody);
                                     document.close();
-                                    // The back button appears to go back 2 times since the error page is not really a
-                                    // new page
+                                    // The browser back button appears to go back 2 times since the displayed html
+                                    // is not in a real new page
                                 }
                             }
-                        });
-                    }
-                });
+                            else {
+                                let responseBody = request.responseText;
+                                history.replaceState(null, "", "/assistant");
+                                document.open();
+                                document.write(responseBody);
+                                document.close();
+                                // The back button appears to go back 2 times since the error page is not really a
+                                // new page
+                            }
+                        }
+                    });
+                }
+            });
 
-                newButton.addEventListener("click", () => {
-                    this.newQuestion();
-                });
-            }
-
-            this.displayAnswer = function(question, answer) {
-                document.getElementById("last-question-text").textContent = question;
-                document.getElementById("last-answer-text").textContent = answer;
-                newQuestionBox.hidden = true;
-                lastQuestionBox.hidden = false;
-            }
-
-            this.newQuestion = function() {
-                currentQuestionBox.value = "";
-                submitButton.disabled = true;
-                lastQuestionBox.hidden = true;
-                newQuestionBox.hidden = false;
-            }
+            newButton.addEventListener("click", () => {
+                this.newQuestion();
+            });
         }
 
-    }());
+        this.displayAnswer = function(question, answer) {
+            document.getElementById("last-question-text").textContent = question;
+            document.getElementById("last-answer-text").textContent = answer;
+            newQuestionBox.hidden = true;
+            lastQuestionBox.hidden = false;
+            previousQuestionsManager.addLastQuestion(question, answer);
+        }
+
+        this.newQuestion = function() {
+            currentQuestionBox.value = "";
+            submitButton.disabled = true;
+            lastQuestionBox.hidden = true;
+            newQuestionBox.hidden = false;
+        }
+    }
 </script>

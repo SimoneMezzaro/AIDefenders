@@ -1,8 +1,7 @@
 package org.codedefenders.smartassistant;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
@@ -17,6 +16,7 @@ import org.codedefenders.database.GameDAO;
 import org.codedefenders.database.PlayerDAO;
 import org.codedefenders.game.GameState;
 import org.codedefenders.game.multiplayer.MultiplayerGame;
+import org.codedefenders.model.AssistantQuestionEntity;
 import org.codedefenders.servlets.games.GameProducer;
 import org.codedefenders.smartassistant.exceptions.ChatGPTException;
 import org.codedefenders.util.Paths;
@@ -42,45 +42,35 @@ public class AssistantServlet extends HttpServlet {
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        doPost(request,response);
+        MultiplayerGame game = gameProducer.getMultiplayerGame();
+        Integer playerId = getPlayerIdIfGameIsValid(request, response, game);
+        if(playerId == null){
+            return;
+        }
+        List<AssistantQuestionEntity> questionsList = assistantService.getQuestionsByPlayer(playerId);
+        sendJson(response, questionsList);
     }
 
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         Map<String, String> responseBody = new HashMap<>();
         MultiplayerGame game = gameProducer.getMultiplayerGame();
-        if (game == null) {
-            logger.error("No game found. Aborting request.");
-            String referer = request.getHeader("referer");
-            responseBody.put("redirect", referer != null ? referer : "/");
-            sendJson(response, responseBody);
+        Integer playerId = getPlayerIdIfGameIsValid(request, response, game);
+        if(playerId == null){
             return;
         }
         int gameId = game.getId();
-        int playerId = PlayerDAO.getPlayerIdForUserAndGame(login.getUserId(), gameId);
-        if (playerId == -1 && game.getCreatorId() != login.getUserId()) {
-            logger.info("User {} not part of game {}. Aborting request.", login.getUserId(), gameId);
-            responseBody.put("redirect", url.forPath(Paths.GAMES_OVERVIEW));
-            sendJson(response, responseBody);
-            return;
-        }
-        if (game.getState() == GameState.FINISHED || GameDAO.isGameExpired(gameId)) {
-            logger.info("Game {} is finished or expired. Aborting request.", gameId);
-            responseBody.put("redirect", url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
-            sendJson(response, responseBody);
-            return;
-        }
-        String question = request.getParameter("question");
-        if(question == null || question.isEmpty()) {
+        String questionText = request.getParameter("question");
+        if(questionText == null || questionText.isEmpty()) {
             messages.add("You can't submit empty questions to the smart assistant");
             responseBody.put("redirect", url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
             sendJson(response, responseBody);
             return;
         }
-        question = question.trim();
-        String answer;
+        questionText = questionText.trim();
+        AssistantQuestionEntity question = new AssistantQuestionEntity(questionText, playerId);
         try {
-            answer = assistantService.sendQuestionWithNoContext(question);
+            question = assistantService.sendQuestionWithNoContext(question);
         } catch (ChatGPTException e) {
             messages.add("The smart assistant encountered an error!\n" +
                     "Please try again and contact your administrator if this keeps happening");
@@ -88,12 +78,39 @@ public class AssistantServlet extends HttpServlet {
             sendJson(response, responseBody);
             return;
         }
-        responseBody.put("question", question);
-        responseBody.put("answer", answer);
+        responseBody.put("question", question.getQuestion());
+        responseBody.put("answer", question.getAnswer());
         sendJson(response, responseBody);
     }
 
-    private void sendJson(HttpServletResponse response, Map<String, String> responseBody) throws IOException {
+    private Integer getPlayerIdIfGameIsValid(HttpServletRequest request, HttpServletResponse response, MultiplayerGame game)
+            throws IOException {
+        Map<String, String> responseBody = new HashMap<>();
+        if (game == null) {
+            logger.error("No game found. Aborting request.");
+            String referer = request.getHeader("referer");
+            responseBody.put("redirect", referer != null ? referer : "/");
+            sendJson(response, responseBody);
+            return null;
+        }
+        int gameId = game.getId();
+        int playerId = PlayerDAO.getPlayerIdForUserAndGame(login.getUserId(), gameId);
+        if (playerId == -1 && game.getCreatorId() != login.getUserId()) {
+            logger.info("User {} not part of game {}. Aborting request.", login.getUserId(), gameId);
+            responseBody.put("redirect", url.forPath(Paths.GAMES_OVERVIEW));
+            sendJson(response, responseBody);
+            return null;
+        }
+        if (game.getState() == GameState.FINISHED || GameDAO.isGameExpired(gameId)) {
+            logger.info("Game {} is finished or expired. Aborting request.", gameId);
+            responseBody.put("redirect", url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
+            sendJson(response, responseBody);
+            return null;
+        }
+        return playerId;
+    }
+
+    private void sendJson(HttpServletResponse response, Object responseBody) throws IOException {
         String json = new Gson().toJson(responseBody);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
