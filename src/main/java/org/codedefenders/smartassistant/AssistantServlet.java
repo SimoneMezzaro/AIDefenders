@@ -1,7 +1,9 @@
 package org.codedefenders.smartassistant;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
@@ -31,6 +33,8 @@ public class AssistantServlet extends HttpServlet {
     @Inject
     private AssistantService assistantService;
     @Inject
+    private AssistantPromptService assistantPromptService;
+    @Inject
     private GameProducer gameProducer;
     @Inject
     private CodeDefendersAuth login;
@@ -42,9 +46,16 @@ public class AssistantServlet extends HttpServlet {
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        Map<String, String> responseBody = new HashMap<>();
         MultiplayerGame game = gameProducer.getMultiplayerGame();
         Integer playerId = getPlayerIdIfGameIsValid(request, response, game);
         if(playerId == null){
+            return;
+        }
+        if(!assistantService.isAssistantEnabledForUser(login.getUserId())) {
+            messages.add("Your smart assistant is currently disabled");
+            responseBody.put("redirect", url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + game.getId());
+            sendJson(response, responseBody);
             return;
         }
         List<AssistantQuestionEntity> questionsList = assistantService.getQuestionsByPlayer(playerId);
@@ -60,6 +71,12 @@ public class AssistantServlet extends HttpServlet {
             return;
         }
         int gameId = game.getId();
+        if(!assistantService.isAssistantEnabledForUser(login.getUserId())) {
+            messages.add("Your smart assistant is currently disabled");
+            responseBody.put("redirect", url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
+            sendJson(response, responseBody);
+            return;
+        }
         String questionText = request.getParameter("question");
         if(questionText == null || questionText.isEmpty()) {
             messages.add("You can't submit empty questions to the smart assistant");
@@ -67,10 +84,11 @@ public class AssistantServlet extends HttpServlet {
             sendJson(response, responseBody);
             return;
         }
+        String prompt = assistantPromptService.getLastPrompt();
         questionText = questionText.trim();
         AssistantQuestionEntity question = new AssistantQuestionEntity(questionText, playerId);
         try {
-            question = assistantService.sendQuestionWithNoContext(question);
+            question = assistantService.sendQuestionWithNoContext(question, prompt);
         } catch (ChatGPTException e) {
             messages.add("The smart assistant encountered an error!\n" +
                     "Please try again and contact your administrator if this keeps happening");

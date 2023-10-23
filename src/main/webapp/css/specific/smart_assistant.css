@@ -8,21 +8,19 @@
     min-height: 200px;
 }
 
-.assistant-buttons-right-container {
-    float: right;
-}
-
 .assistant-button {
-    color: white;
-    background-color: #3479a2;
-    border-color: #29698f;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
-    margin-top: 0.5rem;
 }
 
-.assistant-button:hover {
-    color: white;
-    background-color: #296486;
-    border-color: #1b5171;
+#prompt-text {
+    min-height: 300px;
+}
+
+#assistant-status.enabled {
+    color: green;
+}
+
+#assistant-status.disabled {
+    color: red;
 }

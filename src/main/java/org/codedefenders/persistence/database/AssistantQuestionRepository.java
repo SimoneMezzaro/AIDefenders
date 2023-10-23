@@ -2,8 +2,8 @@ package org.codedefenders.persistence.database;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDate;
+import java.util.*;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -16,8 +16,7 @@ import org.intellij.lang.annotations.Language;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.codedefenders.persistence.database.util.ResultSetUtils.listFromRS;
-import static org.codedefenders.persistence.database.util.ResultSetUtils.nextFromRS;
+import static org.codedefenders.persistence.database.util.ResultSetUtils.*;
 
 @Transactional
 public class AssistantQuestionRepository {
@@ -40,6 +39,16 @@ public class AssistantQuestionRepository {
             useful = null;
         }
         return new AssistantQuestionEntity(id, question, answer, playerId, useful);
+    }
+
+    private Map<LocalDate, Integer> questionsAmountMapFromRS(ResultSet rs) throws SQLException {
+        Map<LocalDate, Integer> map = new HashMap<>();
+        while(rs.next()) {
+            LocalDate date = rs.getDate(1).toLocalDate();
+            int amount = rs.getInt(2);
+            map.put(date, amount);
+        }
+        return map;
     }
 
     // add new question
@@ -83,6 +92,29 @@ public class AssistantQuestionRepository {
         try {
             return queryRunner
                     .query(query, listFromRS(this::assistantQuestionEntityFromRS), playerId);
+        } catch (SQLException e) {
+            logger.error("SQLException while executing query", e);
+            throw new UncheckedSQLException("SQLException while executing query", e);
+        }
+    }
+
+    // get amount of questions in the last X days with at least one question
+    public Map<LocalDate, Integer> getLastXAmountOfQuestions(int X) {
+        @Language("SQL") String query = "SELECT DATE(Timestamp), count(*) FROM assistant_questions " +
+                "GROUP BY DATE(Timestamp) ORDER BY DATE(Timestamp) DESC LIMIT ?;";
+        try {
+            return queryRunner.query(query, this::questionsAmountMapFromRS, X);
+        } catch (SQLException e) {
+            logger.error("SQLException while executing query", e);
+            throw new UncheckedSQLException("SQLException while executing query", e);
+        }
+    }
+
+    // get total amount of questions (all players)
+    public Optional<Integer> getTotalQuestionsAmount() {
+        @Language("SQL") String query = "SELECT COUNT(*) FROM assistant_questions;";
+        try {
+            return queryRunner.query(query, oneFromRS(rs -> rs.getInt(1)));
         } catch (SQLException e) {
             logger.error("SQLException while executing query", e);
             throw new UncheckedSQLException("SQLException while executing query", e);

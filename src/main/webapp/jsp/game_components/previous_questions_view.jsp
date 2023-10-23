@@ -9,17 +9,21 @@
         <div id="previous-question" hidden>
             <div class="card-header">
                 <b>Question: </b>
-                <p id="previous-question-text"></p>
+                <p id="previous-question-text" style="white-space: pre-wrap"></p>
             </div>
             <div class="card-body">
                 <b>Answer: </b>
-                <p id="previous-answer-text"></p>
+                <p id="previous-answer-text" style="white-space: pre-wrap"></p>
             </div>
         </div>
     </div>
-    <div class="assistant-buttons-right-container">
-        <button id="prev-question-btn" class="btn assistant-button" disabled>&lt;</button>
-        <button id="next-question-btn" class="btn assistant-button" disabled>&gt;</button>
+    <div class="row g-2 justify-content-end mt-0">
+        <div class="col-auto">
+            <button class="btn btn-primary assistant-button" id="prev-question-btn" disabled>&lt;</button>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary assistant-button" id="next-question-btn" disabled>&gt;</button>
+        </div>
     </div>
 </div>
 

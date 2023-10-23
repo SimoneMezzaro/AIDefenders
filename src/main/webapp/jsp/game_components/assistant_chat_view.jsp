@@ -13,12 +13,14 @@
     </div>
     <div id="new-question">
         <form>
-            <div class="card game-component-resize assistant-container">
+            <div id="current-question-div" class="card game-component-resize assistant-container">
                 <textarea id="current-question" name="question" placeholder="Write your question here" class="card-body"></textarea>
             </div>
             <input id="assistant-game-id" type="hidden" name="gameId" value="<%= game.getId() %>">
-            <div class="assistant-buttons-right-container">
-                <input id="sub-question-btn" type="submit" class="btn assistant-button" value="Submit" disabled>
+            <div class="row g-2 justify-content-end mt-0">
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary assistant-button" id="sub-question-btn" disabled>Submit</button>
+                </div>
             </div>
         </form>
     </div>
@@ -27,15 +29,17 @@
         <div class="card game-component-resize assistant-container">
             <div class="card-header">
                 <b>Question: </b>
-                <p id="last-question-text"></p>
+                <p id="last-question-text" style="white-space: pre-wrap"></p>
             </div>
             <div class="card-body">
                 <b>Answer: </b>
-                <p id="last-answer-text"></p>
+                <p id="last-answer-text" style="white-space: pre-wrap"></p>
             </div>
         </div>
-        <div class="assistant-buttons-right-container">
-            <button id="new-question-btn" class="btn assistant-button">New Question</button>
+        <div class="row g-2 justify-content-end mt-0">
+            <div class="col-auto">
+                <button class="btn btn-primary assistant-button" id="new-question-btn">New Question</button>
+            </div>
         </div>
     </div>
 </div>
@@ -76,6 +80,8 @@
 
             submitButton.addEventListener("click", (e) => {
                 e.preventDefault();
+                submitButton.disabled = true;
+                document.getElementById("current-question-div").classList.add("loading");
                 let question = currentQuestionBox.value.trim();
                 let gameId = document.getElementById("assistant-game-id").value;
                 let body = "question=" + question + "&gameId=" + gameId;
@@ -126,8 +132,10 @@
             document.getElementById("last-question-text").textContent = question;
             document.getElementById("last-answer-text").textContent = answer;
             newQuestionBox.hidden = true;
+            document.getElementById("current-question-div").classList.remove("loading");
             lastQuestionBox.hidden = false;
             previousQuestionsManager.addLastQuestion(question, answer);
+            debugger;
         }
 
         this.newQuestion = function() {

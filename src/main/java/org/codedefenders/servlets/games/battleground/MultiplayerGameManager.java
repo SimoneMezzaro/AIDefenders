@@ -82,6 +82,7 @@ import org.codedefenders.servlets.games.GameManagingUtils;
 import org.codedefenders.servlets.games.GameProducer;
 import org.codedefenders.servlets.util.Redirect;
 import org.codedefenders.servlets.util.ServletUtils;
+import org.codedefenders.smartassistant.AssistantService;
 import org.codedefenders.util.Constants;
 import org.codedefenders.util.Paths;
 import org.codedefenders.util.URLUtils;
@@ -193,6 +194,9 @@ public class MultiplayerGameManager extends HttpServlet {
     @Inject
     private KillMapService killMapService;
 
+    @Inject
+    private AssistantService assistantService;
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -230,6 +234,7 @@ public class MultiplayerGameManager extends HttpServlet {
 
         request.setAttribute("game", game);
         request.setAttribute("playerId", playerId);
+        request.setAttribute("assistantEnabled", assistantService.isAssistantEnabledForUser(login.getUserId()));
 
         final boolean isGameClosed = game.getState() == GameState.FINISHED || GameDAO.isGameExpired(gameId);
         final String jspPath = isGameClosed

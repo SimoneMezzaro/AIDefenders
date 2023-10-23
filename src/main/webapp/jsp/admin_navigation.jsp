@@ -76,6 +76,9 @@
         </ul>
     </li>
     <li class="nav-item">
+        <a class="nav-link <%=active(activePage,"adminSmartAssistant")%>" id="adminSmartAssistant" href="${url.forPath(Paths.ADMIN_ASSISTANT)}">Smart Assistant</a>
+    </li>
+    <li class="nav-item">
         <a class="nav-link <%=active(activePage,"adminSystemSettings")%>" id="adminSystemSettings" href="${url.forPath(Paths.ADMIN_SETTINGS)}">System Settings</a>
     </li>
 </ul>

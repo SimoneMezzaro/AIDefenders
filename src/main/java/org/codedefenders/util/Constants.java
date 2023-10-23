@@ -124,6 +124,7 @@ public class Constants {
     public static final String ADMIN_SETTINGS_JSP = "/jsp/admin_system_settings.jsp";
     public static final String ADMIN_MONITOR_JSP = "/jsp/admin_monitor_games.jsp";
     public static final String ADMIN_KILLMAPS_JSP = "/jsp/admin_killmap_management.jsp";
+    public static final String ADMIN_ASSISTANT_JSP = "/jsp/admin_assistant_settings.jsp";
     public static final String ADMIN_PUZZLE_MANAGEMENT_JSP = "/jsp/admin_puzzle_management.jsp";
     public static final String ADMIN_PUZZLE_UPLOAD_JSP = "/jsp/admin_puzzle_upload.jsp";
     public static final String ADMIN_ANALYTICS_USERS_JSP = "/jsp/admin_analytics_users.jsp";
