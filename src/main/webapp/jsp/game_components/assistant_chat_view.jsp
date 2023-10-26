@@ -29,14 +29,20 @@
         <div class="card game-component-resize assistant-container">
             <div class="card-header">
                 <b>Question: </b>
-                <p id="last-question-text" style="white-space: pre-wrap"></p>
+                <p id="last-question-text" class="assistant-formatted-text"></p>
             </div>
-            <div class="card-body">
-                <b>Answer: </b>
-                <p id="last-answer-text" style="white-space: pre-wrap"></p>
+            <div id="last-answer-box" class="card-body">
+
             </div>
         </div>
         <div class="row g-2 justify-content-end mt-0">
+            <div class="col-auto d-flex align-items-center">Was the answer useful?</div>
+            <div class="col-auto">
+                <button class="btn btn-success assistant-button" id="yes-btn">Yes</button>
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-danger assistant-button" id="no-btn">No</button>
+            </div>
             <div class="col-auto">
                 <button class="btn btn-primary assistant-button" id="new-question-btn">New Question</button>
             </div>
@@ -130,12 +136,36 @@
 
         this.displayAnswer = function(question, answer) {
             document.getElementById("last-question-text").textContent = question;
-            document.getElementById("last-answer-text").textContent = answer;
+            let answerBox = document.getElementById("last-answer-box");
+            answerBox.replaceChildren();
+            try {
+                let jsonAnswer = JSON.parse(answer);
+                for(let key in jsonAnswer) {
+                    let value = jsonAnswer[key];
+                    if(value !== undefined && value !== null && value.trim() !== "") {
+                        let b = document.createElement("b");
+                        b.textContent = key[0].toUpperCase() + key.slice(1) + ": ";
+                        answerBox.appendChild(b);
+                        let p = document.createElement("p");
+                        p.textContent = value;
+                        p.classList.add("assistant-formatted-text");
+                        answerBox.appendChild(p);
+                    }
+                }
+            } catch (error) {
+                answerBox.replaceChildren();
+                let b = document.createElement("b");
+                b.textContent = "Answer: ";
+                answerBox.appendChild(b);
+                let p = document.createElement("p");
+                p.textContent = answer;
+                p.classList.add("assistant-formatted-text");
+                answerBox.appendChild(p);
+            }
             newQuestionBox.hidden = true;
             document.getElementById("current-question-div").classList.remove("loading");
             lastQuestionBox.hidden = false;
             previousQuestionsManager.addLastQuestion(question, answer);
-            debugger;
         }
 
         this.newQuestion = function() {

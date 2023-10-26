@@ -3,6 +3,16 @@
     border: none;
 }
 
+#yes-btn {
+    margin-left: 10px;
+    width: 66px;
+}
+
+#no-btn {
+    margin-right: 30px;
+    width: 66px;
+}
+
 .assistant-container {
     height: 230px;
     min-height: 200px;
@@ -11,6 +21,10 @@
 .assistant-button {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
+}
+
+.assistant-formatted-text {
+    white-space: pre-wrap;
 }
 
 #prompt-text {

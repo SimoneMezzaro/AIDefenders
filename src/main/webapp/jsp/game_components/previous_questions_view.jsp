@@ -9,11 +9,10 @@
         <div id="previous-question" hidden>
             <div class="card-header">
                 <b>Question: </b>
-                <p id="previous-question-text" style="white-space: pre-wrap"></p>
+                <p id="previous-question-text" class="assistant-formatted-text"></p>
             </div>
-            <div class="card-body">
-                <b>Answer: </b>
-                <p id="previous-answer-text" style="white-space: pre-wrap"></p>
+            <div id="previous-answer-box" class="card-body">
+
             </div>
         </div>
     </div>
@@ -117,7 +116,32 @@
             }
             let selected = this.questionsList[this.questionIndex];
             document.getElementById("previous-question-text").textContent = selected.question;
-            document.getElementById("previous-answer-text").textContent = selected.answer;
+            let answerBox = document.getElementById("previous-answer-box");
+            answerBox.replaceChildren();
+            try {
+                let jsonAnswer = JSON.parse(selected.answer);
+                for(let key in jsonAnswer) {
+                    let value = jsonAnswer[key];
+                    if(value !== undefined && value !== null && value.trim() !== "") {
+                        let b = document.createElement("b");
+                        b.textContent = key[0].toUpperCase() + key.slice(1) + ": ";
+                        answerBox.appendChild(b);
+                        let p = document.createElement("p");
+                        p.textContent = value;
+                        p.classList.add("assistant-formatted-text");
+                        answerBox.appendChild(p);
+                    }
+                }
+            } catch (error) {
+                answerBox.replaceChildren();
+                let b = document.createElement("b");
+                b.textContent = "Answer: ";
+                answerBox.appendChild(b);
+                let p = document.createElement("p");
+                p.textContent = selected.answer;
+                p.classList.add("assistant-formatted-text");
+                answerBox.appendChild(p);
+            }
             document.getElementById("previous-question").hidden = false;
             prevQuestionButton.disabled = (this.questionIndex === 0);
             nextQuestionButton.disabled = (this.questionIndex === this.maxQuestionIndex);
