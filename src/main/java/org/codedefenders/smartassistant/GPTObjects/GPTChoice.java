@@ -1,8 +1,8 @@
-package org.codedefenders.smartassistant.response.objects;
+package org.codedefenders.smartassistant.GPTObjects;
 
-public class ChatGPTChoice {
+public class GPTChoice {
     private Integer index;
-    private ChatGPTMessage message;
+    private GPTMessage message;
     private String finishReason;
 
     public String getMessageContent() {

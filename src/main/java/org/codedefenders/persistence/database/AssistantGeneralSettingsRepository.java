@@ -17,7 +17,7 @@ import static org.codedefenders.persistence.database.util.ResultSetUtils.nextFro
 @Transactional
 public class AssistantGeneralSettingsRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(AssistantGeneralSettingsRepository.class);
     private final QueryRunner queryRunner;
 
     @Inject

@@ -1,16 +1,16 @@
-package org.codedefenders.smartassistant.response.objects;
+package org.codedefenders.smartassistant.GPTObjects;
 
 import java.util.List;
 
-public class ChatGPTCompletion {
+public class GPTCompletion {
         private String id;
         private String object;
         private Integer created;
         private String model;
-        private List<ChatGPTChoice> choices;
-        private ChatGPTCompletionUsage usage;
+        private List<GPTChoice> choices;
+        private GPTCompletionUsage usage;
 
-        public ChatGPTChoice getFirstChoice() {
+        public GPTChoice getFirstChoice() {
             return choices.get(0);
         }
 

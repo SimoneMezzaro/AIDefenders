@@ -41,7 +41,7 @@ public class AdminAssistantSettings extends HttpServlet {
     private MessagesBean messages;
     @Inject
     private URLUtils url;
-    private static final Logger logger = LoggerFactory.getLogger(ChatGPTRequestDispatcher.class);
+    private static final Logger logger = LoggerFactory.getLogger(AdminAssistantSettings.class);
 
     private static class PostBody {
         private String action;
@@ -114,7 +114,7 @@ public class AdminAssistantSettings extends HttpServlet {
         //TODO: let the user select the amount of days
         responseBody.put("questionsPerDay", assistantService.getAmountOfQuestionsInTheLastDays(7));
         responseBody.put("totalQuestions", assistantService.getTotalQuestionsAmount());
-        responseBody.put("prompt", assistantPromptService.getLastPrompt());
+        responseBody.put("prompt", assistantPromptService.getLastPrompt().getPrompt());
         responseBody.put("assistantEnabled", assistantService.getAssistantEnabled());
         sendJson(response, responseBody);
     }
@@ -135,6 +135,7 @@ public class AdminAssistantSettings extends HttpServlet {
                 String[] columns = new String[]{
                         "timestamp",
                         "prompt",
+                        "asSeparateContext",
                         "defaultFlag"
                 };
                 PrintWriter out = response.getWriter();

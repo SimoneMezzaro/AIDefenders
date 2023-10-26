@@ -6,6 +6,7 @@ public class AssistantQuestionEntity {
     private String question;
     private String answer;
     private transient Integer playerId;
+    private transient Integer promptId;
     private transient Boolean useful;
 
     public AssistantQuestionEntity(String question, Integer playerId) {
@@ -13,11 +14,12 @@ public class AssistantQuestionEntity {
         this.playerId = playerId;
     }
 
-    public AssistantQuestionEntity(Integer id, String question, String answer, Integer playerId, Boolean useful) {
+    public AssistantQuestionEntity(Integer id, String question, String answer, Integer playerId, Integer promptId, Boolean useful) {
         this.id = id;
         this.question = question;
         this.answer = answer;
         this.playerId = playerId;
+        this.promptId = promptId;
         this.useful = useful;
     }
 
@@ -51,6 +53,14 @@ public class AssistantQuestionEntity {
 
     public void setPlayerId(Integer playerId) {
         this.playerId = playerId;
+    }
+
+    public Integer getPromptId() {
+        return promptId;
+    }
+
+    public void setPromptId(Integer promptId) {
+        this.promptId = promptId;
     }
 
     public Boolean getUseful() {

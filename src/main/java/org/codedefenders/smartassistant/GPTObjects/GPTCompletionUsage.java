@@ -1,6 +1,6 @@
-package org.codedefenders.smartassistant.response.objects;
+package org.codedefenders.smartassistant.GPTObjects;
 
-public class ChatGPTCompletionUsage {
+public class GPTCompletionUsage {
     private Integer promptTokens;
     private Integer completionTokens;
     private Integer totalTokens;

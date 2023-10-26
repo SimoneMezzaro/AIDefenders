@@ -21,7 +21,7 @@ import static org.codedefenders.persistence.database.util.ResultSetUtils.*;
 @Transactional
 public class AssistantQuestionRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(AssistantQuestionRepository.class);
     private final QueryRunner queryRunner;
 
     @Inject
@@ -33,12 +33,13 @@ public class AssistantQuestionRepository {
         Integer id = rs.getInt("ID");
         String question = rs.getString("Question");
         String answer = rs.getString("Answer");
+        Integer promptId = rs.getInt("Prompt_ID");
         Integer playerId = rs.getInt("Player_ID");
         Boolean useful = rs.getBoolean("Useful");
         if(rs.wasNull()) {
             useful = null;
         }
-        return new AssistantQuestionEntity(id, question, answer, playerId, useful);
+        return new AssistantQuestionEntity(id, question, answer, playerId, promptId, useful);
     }
 
     private Map<LocalDate, Integer> questionsAmountMapFromRS(ResultSet rs) throws SQLException {
@@ -54,12 +55,13 @@ public class AssistantQuestionRepository {
     // add new question
     public Optional<Integer> storeQuestion(@Nonnull AssistantQuestionEntity assistantQuestionEntity) {
         @Language("SQL") String query = "INSERT INTO assistant_questions "
-                + "(Question, Player_ID) "
-                + "VALUES (?, ?);";
+                + "(Question, Player_ID, Prompt_ID) "
+                + "VALUES (?, ?, ?);";
         try {
             return queryRunner.insert(query, resultSet -> nextFromRS(resultSet, rs -> rs.getInt(1)),
                             assistantQuestionEntity.getQuestion(),
-                            assistantQuestionEntity.getPlayerId()
+                            assistantQuestionEntity.getPlayerId(),
+                            assistantQuestionEntity.getPromptId()
                     );
         } catch (SQLException e) {
             logger.error("SQLException while executing query", e);

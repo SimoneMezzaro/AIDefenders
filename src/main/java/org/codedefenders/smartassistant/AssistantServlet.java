@@ -20,7 +20,7 @@ import org.codedefenders.game.GameState;
 import org.codedefenders.game.multiplayer.MultiplayerGame;
 import org.codedefenders.model.AssistantQuestionEntity;
 import org.codedefenders.servlets.games.GameProducer;
-import org.codedefenders.smartassistant.exceptions.ChatGPTException;
+import org.codedefenders.smartassistant.exceptions.GPTException;
 import org.codedefenders.util.Paths;
 import org.codedefenders.util.URLUtils;
 import org.slf4j.Logger;
@@ -33,8 +33,6 @@ public class AssistantServlet extends HttpServlet {
     @Inject
     private AssistantService assistantService;
     @Inject
-    private AssistantPromptService assistantPromptService;
-    @Inject
     private GameProducer gameProducer;
     @Inject
     private CodeDefendersAuth login;
@@ -42,7 +40,7 @@ public class AssistantServlet extends HttpServlet {
     private MessagesBean messages;
     @Inject
     private URLUtils url;
-    private static final Logger logger = LoggerFactory.getLogger(ChatGPTRequestDispatcher.class);
+    private static final Logger logger = LoggerFactory.getLogger(AssistantServlet.class);
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -84,12 +82,11 @@ public class AssistantServlet extends HttpServlet {
             sendJson(response, responseBody);
             return;
         }
-        String prompt = assistantPromptService.getLastPrompt();
         questionText = questionText.trim();
         AssistantQuestionEntity question = new AssistantQuestionEntity(questionText, playerId);
         try {
-            question = assistantService.sendQuestionWithNoContext(question, prompt);
-        } catch (ChatGPTException e) {
+            question = assistantService.sendQuestion(question, game);
+        } catch (GPTException e) {
             messages.add("The smart assistant encountered an error!\n" +
                     "Please try again and contact your administrator if this keeps happening");
             responseBody.put("redirect", url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);

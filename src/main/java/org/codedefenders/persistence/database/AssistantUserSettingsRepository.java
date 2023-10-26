@@ -21,7 +21,7 @@ import static org.codedefenders.persistence.database.util.ResultSetUtils.*;
 @Transactional
 public class AssistantUserSettingsRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(AssistantUserSettingsRepository.class);
     private final QueryRunner queryRunner;
 
     @Inject

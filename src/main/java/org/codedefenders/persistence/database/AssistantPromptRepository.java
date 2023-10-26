@@ -21,7 +21,7 @@ import static org.codedefenders.persistence.database.util.ResultSetUtils.*;
 @Transactional
 public class AssistantPromptRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(UserRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(AssistantPromptRepository.class);
     private final QueryRunner queryRunner;
 
     @Inject
@@ -33,13 +33,14 @@ public class AssistantPromptRepository {
         Integer id = rs.getInt("ID");
         String prompt = rs.getString("Prompt");
         long timestamp = rs.getTimestamp("Timestamp").toInstant().getEpochSecond();
+        Boolean asSeparateContext = rs.getBoolean("As_separate_context");
         Boolean defaultFlag = rs.getBoolean("Default_flag");
-        return new AssistantPromptEntity(id, prompt, timestamp, defaultFlag);
+        return new AssistantPromptEntity(id, prompt, timestamp, asSeparateContext, defaultFlag);
     }
 
     public Optional<AssistantPromptEntity> getLastPrompt() {
-        @Language("SQL") String query = "SELECT ID, Prompt, Timestamp, Default_flag FROM assistant_prompts " +
-                "ORDER BY Timestamp DESC LIMIT 1;";
+        @Language("SQL") String query = "SELECT ID, Prompt, Timestamp, As_separate_context, Default_flag " +
+                "FROM assistant_prompts ORDER BY Timestamp DESC LIMIT 1;";
         try {
             return queryRunner.query(query, oneFromRS(this::assistantPromptEntityFromRS));
         } catch (SQLException e) {
@@ -49,8 +50,8 @@ public class AssistantPromptRepository {
     }
 
     public Optional<AssistantPromptEntity> getLastDefaultPrompt() {
-        @Language("SQL") String query = "SELECT ID, Prompt, Timestamp, Default_flag FROM assistant_prompts WHERE Default_flag = 1 " +
-                "ORDER BY Timestamp DESC LIMIT 1;";
+        @Language("SQL") String query = "SELECT ID, Prompt, Timestamp, As_separate_context, Default_flag " +
+                "FROM assistant_prompts WHERE Default_flag = 1 ORDER BY Timestamp DESC LIMIT 1;";
         try {
             return queryRunner.query(query, oneFromRS(this::assistantPromptEntityFromRS));
         } catch (SQLException e) {
@@ -60,8 +61,8 @@ public class AssistantPromptRepository {
     }
 
     public List<AssistantPromptEntity> getAllPrompts() {
-        @Language("SQL") String query = "SELECT ID, Prompt, Timestamp, Default_flag FROM assistant_prompts " +
-                "ORDER BY Timestamp DESC;";
+        @Language("SQL") String query = "SELECT ID, Prompt, Timestamp, As_separate_context, Default_flag " +
+                "FROM assistant_prompts ORDER BY Timestamp DESC;";
         try {
             return queryRunner.query(query, listFromRS(this::assistantPromptEntityFromRS));
         } catch (SQLException e) {
@@ -72,11 +73,12 @@ public class AssistantPromptRepository {
 
     public Optional<Integer> storePrompt(@Nonnull AssistantPromptEntity assistantPromptEntity) {
         @Language("SQL") String query = "INSERT INTO assistant_prompts "
-                + "(Prompt, Default_flag) "
-                + "VALUES (?, ?);";
+                + "(Prompt, As_separate_context, Default_flag) "
+                + "VALUES (?, ?, ?);";
         try {
             return queryRunner.insert(query, resultSet -> nextFromRS(resultSet, rs -> rs.getInt(1)),
                     assistantPromptEntity.getPrompt(),
+                    assistantPromptEntity.getAsSeparateContext(),
                     assistantPromptEntity.getDefaultFlag()
             );
         } catch (SQLException e) {
