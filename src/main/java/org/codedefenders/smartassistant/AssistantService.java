@@ -5,7 +5,7 @@ import java.util.*;
 
 import javax.inject.Inject;
 
-import org.codedefenders.game.multiplayer.MultiplayerGame;
+import org.codedefenders.game.AbstractGame;
 import org.codedefenders.model.AssistantPromptEntity;
 import org.codedefenders.model.AssistantQuestionEntity;
 import org.codedefenders.model.AssistantUserSettingsEntity;
@@ -31,7 +31,7 @@ public class AssistantService {
 
     // ______USER______
 
-    public AssistantQuestionEntity sendQuestion(AssistantQuestionEntity question, MultiplayerGame game) throws GPTException {
+    public AssistantQuestionEntity sendQuestion(AssistantQuestionEntity question, AbstractGame game) throws GPTException {
         AssistantPromptEntity prompt = assistantPromptService.getLastPrompt();
         question.setPromptId(prompt.getID());
         Optional<Integer> questionId = assistantQuestionRepository.storeQuestion(question);

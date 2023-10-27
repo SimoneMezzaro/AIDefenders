@@ -76,6 +76,7 @@ import org.codedefenders.servlets.games.GameManagingUtils;
 import org.codedefenders.servlets.games.GameProducer;
 import org.codedefenders.servlets.util.Redirect;
 import org.codedefenders.servlets.util.ServletUtils;
+import org.codedefenders.smartassistant.AssistantService;
 import org.codedefenders.util.Constants;
 import org.codedefenders.util.Paths;
 import org.codedefenders.util.URLUtils;
@@ -173,6 +174,9 @@ public class MeleeGameManager extends HttpServlet {
     @Inject
     private URLUtils url;
 
+    @Inject
+    private AssistantService assistantService;
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -216,7 +220,7 @@ public class MeleeGameManager extends HttpServlet {
 
         request.setAttribute("game", game);
         request.setAttribute("playerId", playerId);
-
+        request.setAttribute("assistantEnabled", assistantService.isAssistantEnabledForUser(userId));
 
         // We need to compute/set this here for the `player_view.jsp`.
         List<Test> playerTests = game.getTests()

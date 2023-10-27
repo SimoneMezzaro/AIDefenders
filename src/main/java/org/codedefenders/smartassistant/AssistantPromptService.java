@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import javax.inject.Inject;
 
-import org.codedefenders.game.multiplayer.MultiplayerGame;
+import org.codedefenders.game.AbstractGame;
 import org.codedefenders.model.AssistantPromptEntity;
 import org.codedefenders.persistence.database.AssistantPromptRepository;
 
@@ -14,12 +14,12 @@ public class AssistantPromptService {
     @Inject
     private AssistantPromptRepository assistantPromptRepository;
 
-    public String buildPromptTextWithQuestion(AssistantPromptEntity prompt, String question, MultiplayerGame game) {
+    public String buildPromptTextWithQuestion(AssistantPromptEntity prompt, String question, AbstractGame game) {
         String promptText = buildPromptText(prompt, game);
         return promptText.replace("<user_question>", question);
     }
 
-    public String buildPromptText(AssistantPromptEntity prompt, MultiplayerGame game) {
+    public String buildPromptText(AssistantPromptEntity prompt, AbstractGame game) {
         String CUTSourceCode= game.getCUT().getSourceCode();
         return prompt.getPrompt().replace("<class_under_test>", CUTSourceCode);
     }

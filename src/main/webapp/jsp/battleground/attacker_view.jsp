@@ -107,6 +107,21 @@
 
 <%-- -------------------------------------------------------------------------------- --%>
 
+<%
+    Boolean assistantEnabled = (Boolean) request.getAttribute("assistantEnabled");
+    if(assistantEnabled) {
+%>
+    <div class="row">
+        <div class="col-xl-6 col-12" id="assistant-chat-div">
+            <jsp:include page="../game_components/assistant_chat_view.jsp"/>
+        </div>
+        <div class="col-xl-6 col-12" id=previous-questions-div">
+            <jsp:include page="../game_components/previous_questions_view.jsp"/>
+        </div>
+    </div>
+<%
+    }
+%>
 
 <div class="row">
     <div class="col-xl-6 col-12">

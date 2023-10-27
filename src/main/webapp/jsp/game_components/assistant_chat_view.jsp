@@ -1,8 +1,8 @@
 
-<%@ page import="org.codedefenders.game.multiplayer.MultiplayerGame" %>
+<%@ page import="org.codedefenders.game.AbstractGame" %>
 
 <%
-    MultiplayerGame game = (MultiplayerGame) request.getAttribute("game");
+    int assistantGameId = ((AbstractGame) request.getAttribute("game")).getId();
 %>
 
 <link href="${url.forPath("/css/specific/smart_assistant.css")}" rel="stylesheet">
@@ -16,7 +16,7 @@
             <div id="current-question-div" class="card game-component-resize assistant-container">
                 <textarea id="current-question" name="question" placeholder="Write your question here" class="card-body"></textarea>
             </div>
-            <input id="assistant-game-id" type="hidden" name="gameId" value="<%= game.getId() %>">
+            <input id="assistant-game-id" type="hidden" name="gameId" value="<%= assistantGameId %>">
             <div class="row g-2 justify-content-end mt-0">
                 <div class="col-auto">
                     <button type="submit" class="btn btn-primary assistant-button" id="sub-question-btn" disabled>Submit</button>

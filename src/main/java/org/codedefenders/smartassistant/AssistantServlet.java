@@ -16,8 +16,10 @@ import org.codedefenders.auth.CodeDefendersAuth;
 import org.codedefenders.beans.message.MessagesBean;
 import org.codedefenders.database.GameDAO;
 import org.codedefenders.database.PlayerDAO;
+import org.codedefenders.game.AbstractGame;
+import org.codedefenders.game.GameMode;
 import org.codedefenders.game.GameState;
-import org.codedefenders.game.multiplayer.MultiplayerGame;
+import org.codedefenders.game.multiplayer.MeleeGame;
 import org.codedefenders.model.AssistantQuestionEntity;
 import org.codedefenders.servlets.games.GameProducer;
 import org.codedefenders.smartassistant.exceptions.GPTException;
@@ -44,16 +46,14 @@ public class AssistantServlet extends HttpServlet {
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        Map<String, String> responseBody = new HashMap<>();
-        MultiplayerGame game = gameProducer.getMultiplayerGame();
-        Integer playerId = getPlayerIdIfGameIsValid(request, response, game);
-        if(playerId == null){
+        AbstractGame game = gameProducer.getGame();
+        String redirectUrl = getRedirectUrlIfGameIsValid(request, response, game);
+        if(redirectUrl == null){
             return;
         }
+        int playerId = PlayerDAO.getPlayerIdForUserAndGame(login.getUserId(), game.getId());
         if(!assistantService.isAssistantEnabledForUser(login.getUserId())) {
-            messages.add("Your smart assistant is currently disabled");
-            responseBody.put("redirect", url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + game.getId());
-            sendJson(response, responseBody);
+            sendRedirectWithMessage(response, "Your smart assistant is currently disabled", redirectUrl);
             return;
         }
         List<AssistantQuestionEntity> questionsList = assistantService.getQuestionsByPlayer(playerId);
@@ -63,23 +63,19 @@ public class AssistantServlet extends HttpServlet {
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         Map<String, String> responseBody = new HashMap<>();
-        MultiplayerGame game = gameProducer.getMultiplayerGame();
-        Integer playerId = getPlayerIdIfGameIsValid(request, response, game);
-        if(playerId == null){
+        AbstractGame game = gameProducer.getGame();
+        String redirectUrl = getRedirectUrlIfGameIsValid(request, response, game);
+        if(redirectUrl == null){
             return;
         }
-        int gameId = game.getId();
+        int playerId = PlayerDAO.getPlayerIdForUserAndGame(login.getUserId(), game.getId());
         if(!assistantService.isAssistantEnabledForUser(login.getUserId())) {
-            messages.add("Your smart assistant is currently disabled");
-            responseBody.put("redirect", url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
-            sendJson(response, responseBody);
+            sendRedirectWithMessage(response, "Your smart assistant is currently disabled", redirectUrl);
             return;
         }
         String questionText = request.getParameter("question");
         if(questionText == null || questionText.isEmpty()) {
-            messages.add("You can't submit empty questions to the smart assistant");
-            responseBody.put("redirect", url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
-            sendJson(response, responseBody);
+            sendRedirectWithMessage(response, "You can't submit empty questions to the smart assistant", redirectUrl);
             return;
         }
         questionText = questionText.trim();
@@ -87,10 +83,8 @@ public class AssistantServlet extends HttpServlet {
         try {
             question = assistantService.sendQuestion(question, game);
         } catch (GPTException e) {
-            messages.add("The smart assistant encountered an error!\n" +
-                    "Please try again and contact your administrator if this keeps happening");
-            responseBody.put("redirect", url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
-            sendJson(response, responseBody);
+            sendRedirectWithMessage(response, "The smart assistant encountered an error!\n" +
+                    "Please try again and contact your administrator if this keeps happening", redirectUrl);
             return;
         }
         responseBody.put("question", question.getQuestion());
@@ -98,7 +92,7 @@ public class AssistantServlet extends HttpServlet {
         sendJson(response, responseBody);
     }
 
-    private Integer getPlayerIdIfGameIsValid(HttpServletRequest request, HttpServletResponse response, MultiplayerGame game)
+    private String getRedirectUrlIfGameIsValid(HttpServletRequest request, HttpServletResponse response, AbstractGame game)
             throws IOException {
         Map<String, String> responseBody = new HashMap<>();
         if (game == null) {
@@ -108,21 +102,60 @@ public class AssistantServlet extends HttpServlet {
             sendJson(response, responseBody);
             return null;
         }
+        GameMode mode = game.getMode();
+        if(mode == null) {
+            logger.error("Game mode not set. Aborting request.");
+            String referer = request.getHeader("referer");
+            responseBody.put("redirect", referer != null ? referer : "/");
+            sendJson(response, responseBody);
+            return null;
+        }
         int gameId = game.getId();
+        int userId = login.getUserId();
         int playerId = PlayerDAO.getPlayerIdForUserAndGame(login.getUserId(), gameId);
-        if (playerId == -1 && game.getCreatorId() != login.getUserId()) {
-            logger.info("User {} not part of game {}. Aborting request.", login.getUserId(), gameId);
-            responseBody.put("redirect", url.forPath(Paths.GAMES_OVERVIEW));
+        String redirectUrl;
+        if(mode == GameMode.MELEE) {
+            if(!((MeleeGame) game).hasUserJoined(userId) && game.getCreatorId() != userId) {
+                logger.info("User {} not part of game {}. Aborting request.", userId, gameId);
+                response.sendRedirect(url.forPath(Paths.GAMES_OVERVIEW));
+                return null;
+            }
+            if (game.getCreatorId() != userId && playerId == -1) {
+                logger.warn("Wrong registration with the User {} in Melee Game {}", userId, gameId);
+                response.sendRedirect(url.forPath(Paths.GAMES_OVERVIEW));
+                return null;
+            }
+            redirectUrl = url.forPath(Paths.MELEE_GAME) + "?gameId=" + game.getId();
+        } else if(mode == GameMode.PARTY) {
+            if (playerId == -1 && game.getCreatorId() != login.getUserId()) {
+                logger.info("User {} not part of game {}. Aborting request.", login.getUserId(), gameId);
+                responseBody.put("redirect", url.forPath(Paths.GAMES_OVERVIEW));
+                sendJson(response, responseBody);
+                return null;
+            }
+            redirectUrl = url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + game.getId();
+        } else {
+            logger.error("Invalid game mode. Aborting request.");
+            String referer = request.getHeader("referer");
+            responseBody.put("redirect", referer != null ? referer : "/");
             sendJson(response, responseBody);
             return null;
         }
         if (game.getState() == GameState.FINISHED || GameDAO.isGameExpired(gameId)) {
             logger.info("Game {} is finished or expired. Aborting request.", gameId);
-            responseBody.put("redirect", url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
+            responseBody.put("redirect", redirectUrl);
             sendJson(response, responseBody);
             return null;
         }
-        return playerId;
+        return redirectUrl;
+    }
+
+    private void sendRedirectWithMessage(HttpServletResponse response, String message, String redirectUrl)
+            throws IOException {
+        Map<String, String> responseBody = new HashMap<>();
+        messages.add(message);
+        responseBody.put("redirect", redirectUrl);
+        sendJson(response, responseBody);
     }
 
     private void sendJson(HttpServletResponse response, Object responseBody) throws IOException {
