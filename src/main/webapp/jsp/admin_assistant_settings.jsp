@@ -390,7 +390,7 @@
                                             "targets": 4,
                                             "orderable": false
                                         }],
-                                        scrollY: '800px',
+                                        scrollY: '679px',
                                         scrollCollapse: true,
                                         paging: false,
                                         language: {info: 'Showing _TOTAL_ entries'}
