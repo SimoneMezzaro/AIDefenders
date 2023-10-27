@@ -51,7 +51,6 @@ public class AssistantService {
                     assistantPromptService.buildPromptTextWithQuestion(prompt, question.getQuestion(), game));
             answer = dispatcher.sendChatCompletionRequest(message).getFirstChoiceMessageContent();
         }
-        //TODO: set a size limit to the question
         question.setAnswer(answer);
         assistantQuestionRepository.updateAnswer(question);
         return question;

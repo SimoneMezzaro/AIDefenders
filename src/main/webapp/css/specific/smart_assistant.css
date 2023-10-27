@@ -13,6 +13,10 @@
     width: 66px;
 }
 
+#submit-error {
+    color: red;
+}
+
 .assistant-container {
     height: 230px;
     min-height: 200px;

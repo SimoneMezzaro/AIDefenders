@@ -18,6 +18,9 @@
             </div>
             <input id="assistant-game-id" type="hidden" name="gameId" value="<%= assistantGameId %>">
             <div class="row g-2 justify-content-end mt-0">
+                <div id="submit-error" class="col-auto align-items-center" hidden>
+                    Your question is too long! Use at most 1500 words
+                </div>
                 <div class="col-auto">
                     <button type="submit" class="btn btn-primary assistant-button" id="sub-question-btn" disabled>Submit</button>
                 </div>
@@ -36,7 +39,7 @@
             </div>
         </div>
         <div class="row g-2 justify-content-end mt-0">
-            <div class="col-auto d-flex align-items-center">Was the answer useful?</div>
+            <div class="col-auto align-items-center">Was the answer useful?</div>
             <div class="col-auto">
                 <button class="btn btn-success assistant-button" id="yes-btn">Yes</button>
             </div>
@@ -67,6 +70,7 @@
     var newQuestionBox = document.getElementById("new-question");
     var currentQuestionBox = document.getElementById("current-question")
     var submitButton = document.getElementById("sub-question-btn");
+    var submitError = document.getElementById("submit-error");
     var lastQuestionBox = document.getElementById("last-question")
     var newButton = document.getElementById("new-question-btn");
 
@@ -86,9 +90,16 @@
 
             submitButton.addEventListener("click", (e) => {
                 e.preventDefault();
+                let question = currentQuestionBox.value.trim();
+                if(question.split(/\s+/g).length > 1500) {
+                    submitError.hidden = false;
+                    submitError.classList.add("d-flex");
+                    return;
+                }
                 submitButton.disabled = true;
                 document.getElementById("current-question-div").classList.add("loading");
-                let question = currentQuestionBox.value.trim();
+                submitError.hidden = true;
+                submitError.classList.remove("d-flex");
                 let gameId = document.getElementById("assistant-game-id").value;
                 let body = "question=" + question + "&gameId=" + gameId;
                 if(question !== "") {
@@ -171,6 +182,8 @@
         this.newQuestion = function() {
             currentQuestionBox.value = "";
             submitButton.disabled = true;
+            submitError.hidden = true;
+            submitError.classList.remove("d-flex");
             lastQuestionBox.hidden = true;
             newQuestionBox.hidden = false;
         }

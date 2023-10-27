@@ -79,6 +79,10 @@ public class AssistantServlet extends HttpServlet {
             return;
         }
         questionText = questionText.trim();
+        if(questionText.split("\\s+").length > 1500) {
+            sendRedirectWithMessage(response, "Your question is too long. Use at most 1500 words", redirectUrl);
+            return;
+        }
         AssistantQuestionEntity question = new AssistantQuestionEntity(questionText, playerId);
         try {
             question = assistantService.sendQuestion(question, game);
