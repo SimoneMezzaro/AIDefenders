@@ -60,6 +60,10 @@ public class AssistantService {
         return assistantQuestionRepository.getQuestionsAndAnswersByPlayer(playerId);
     }
 
+    public void updateQuestionFeedback(int playerId, boolean usefulness) {
+        assistantQuestionRepository.updateUsefulnessOfLastQuestionByPlayer(playerId, usefulness);
+    }
+
     public boolean isAssistantEnabledForUser(int userId) {
         Optional<Boolean> enabled = assistantGeneralSettingsRepository.getAssistantEnabled();
         if(enabled.isEmpty()) {

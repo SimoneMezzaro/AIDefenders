@@ -123,15 +123,15 @@ public class AssistantQuestionRepository {
         }
     }
 
-    // update question with usefulness
-    public void updateUsefulness(@Nonnull AssistantQuestionEntity assistantQuestionEntity) {
-        @Language("SQL") String query = "UPDATE assistant_questions " +
-                "SET useful = ? WHERE ID = ?";
+    // update usefulness of last the last question of given player
+    public void updateUsefulnessOfLastQuestionByPlayer(int playerId, boolean usefulness) {
+        @Language("SQL") String query = "UPDATE assistant_questions, " +
+                "(SELECT id FROM assistant_questions WHERE player_id = ? ORDER BY timestamp DESC LIMIT 1) " +
+                "AS last_player_question " +
+                "SET assistant_questions.useful = ? " +
+                "WHERE assistant_questions.id = last_player_question.id;";
         try {
-            int updatedRows = queryRunner.update(query,
-                    assistantQuestionEntity.getUseful(),
-                    assistantQuestionEntity.getId()
-            );
+            int updatedRows = queryRunner.update(query, playerId, usefulness);
             if (updatedRows != 1) {
                 throw new UncheckedSQLException("Couldn't update assistant answer usefulness");
             }

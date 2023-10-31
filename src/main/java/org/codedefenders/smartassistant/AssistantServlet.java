@@ -47,7 +47,7 @@ public class AssistantServlet extends HttpServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         AbstractGame game = gameProducer.getGame();
-        String redirectUrl = getRedirectUrlIfGameIsValid(request, response, game);
+        String redirectUrl = computeRedirectUrlIfGameIsValid(request, response, game);
         if(redirectUrl == null){
             return;
         }
@@ -62,17 +62,34 @@ public class AssistantServlet extends HttpServlet {
 
     @Override
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        Map<String, String> responseBody = new HashMap<>();
         AbstractGame game = gameProducer.getGame();
-        String redirectUrl = getRedirectUrlIfGameIsValid(request, response, game);
+        String redirectUrl = computeRedirectUrlIfGameIsValid(request, response, game);
         if(redirectUrl == null){
             return;
         }
-        int playerId = PlayerDAO.getPlayerIdForUserAndGame(login.getUserId(), game.getId());
         if(!assistantService.isAssistantEnabledForUser(login.getUserId())) {
             sendRedirectWithMessage(response, "Your smart assistant is currently disabled", redirectUrl);
             return;
         }
+        String action = request.getParameter("action");
+        if(action == null) {
+            logger.info("Failed to process post request because the request action is missing");
+            sendRedirectWithMessage(response, "Operation failed due to malformed request", redirectUrl);
+            return;
+        }
+        switch (action) {
+            case "question" -> postQuestion(request, response, redirectUrl, game);
+            case "feedback" -> postFeedback(request, game);
+            default -> {
+                logger.info("Failed to process post request because the request was malformed");
+                sendRedirectWithMessage(response, "Operation failed due to malformed request", redirectUrl);
+            }
+        }
+    }
+
+    private void postQuestion(HttpServletRequest request, HttpServletResponse response, String redirectUrl, AbstractGame game)
+            throws IOException {
+        Map<String, String> responseBody = new HashMap<>();
         String questionText = request.getParameter("question");
         if(questionText == null || questionText.isEmpty()) {
             sendRedirectWithMessage(response, "You can't submit empty questions to the smart assistant", redirectUrl);
@@ -83,6 +100,7 @@ public class AssistantServlet extends HttpServlet {
             sendRedirectWithMessage(response, "Your question is too long. Use at most 1500 words", redirectUrl);
             return;
         }
+        int playerId = PlayerDAO.getPlayerIdForUserAndGame(login.getUserId(), game.getId());
         AssistantQuestionEntity question = new AssistantQuestionEntity(questionText, playerId);
         try {
             question = assistantService.sendQuestion(question, game);
@@ -96,7 +114,13 @@ public class AssistantServlet extends HttpServlet {
         sendJson(response, responseBody);
     }
 
-    private String getRedirectUrlIfGameIsValid(HttpServletRequest request, HttpServletResponse response, AbstractGame game)
+    private void postFeedback(HttpServletRequest request, AbstractGame game) {
+        boolean feedback = Boolean.parseBoolean(request.getParameter("feedback"));
+        int playerId = PlayerDAO.getPlayerIdForUserAndGame(login.getUserId(), game.getId());
+        assistantService.updateQuestionFeedback(playerId, feedback);
+    }
+
+    private String computeRedirectUrlIfGameIsValid(HttpServletRequest request, HttpServletResponse response, AbstractGame game)
             throws IOException {
         Map<String, String> responseBody = new HashMap<>();
         if (game == null) {

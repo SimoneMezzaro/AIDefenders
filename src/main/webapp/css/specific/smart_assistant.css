@@ -8,9 +8,25 @@
     width: 66px;
 }
 
+#yes-btn.feedback-disabled {
+    color: #fff;
+    background-color: #157347;
+    border-color: #146c43;
+    box-shadow: 0 0 0 0.25rem rgba(60,153,110,.5);
+    opacity: 1;
+}
+
 #no-btn {
     margin-right: 30px;
     width: 66px;
+}
+
+#no-btn.feedback-disabled {
+    color: #fff;
+    background-color: #bb2d3b;
+    border-color: #b02a37;
+    box-shadow: 0 0 0 0.25rem rgba(225,83,97,.5);
+    opacity: 1;
 }
 
 #submit-error {
