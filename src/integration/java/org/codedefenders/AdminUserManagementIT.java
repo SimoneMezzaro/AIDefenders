@@ -18,69 +18,43 @@
  */
 package org.codedefenders;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
-import java.sql.Connection;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.codedefenders.beans.message.MessagesBean;
 import org.codedefenders.database.AdminDAO;
-import org.codedefenders.database.DatabaseConnection;
 import org.codedefenders.instrumentation.MetricsRegistry;
 import org.codedefenders.persistence.database.UserRepository;
+import org.codedefenders.persistence.database.util.QueryRunner;
 import org.codedefenders.servlets.admin.AdminSystemSettings;
 import org.codedefenders.servlets.admin.AdminUserManagement;
+import org.codedefenders.util.DatabaseExtension;
 import org.codedefenders.util.EmailUtils;
 import org.codedefenders.util.Paths;
 import org.codedefenders.util.URLUtils;
-import org.junit.Rule;
-import org.junit.experimental.categories.Category;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.codedefenders.util.tags.DatabaseTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.Answer;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
-@Category(DatabaseTest.class)
-@ExtendWith(MockitoExtension.class)
+@DatabaseTest
+@ExtendWith(DatabaseExtension.class)
 public class AdminUserManagementIT {
 
-    @Rule
-    public DatabaseRule db = new DatabaseRule();
-
-    private MockedStatic<DatabaseConnection> mockedDatabaseConnection;
-
-    @BeforeEach
-    public void mockDBConnections() throws Exception {
-        mockedDatabaseConnection = mockStatic(DatabaseConnection.class);
-        mockedDatabaseConnection.when(DatabaseConnection::getConnection).thenAnswer((Answer<Connection>) invocation -> {
-            // Return a new connection from the rule instead
-            return db.getConnection();
-        });
-    }
-
-    @AfterEach
-    public void closeDBConnectionMock() {
-        mockedDatabaseConnection.close();
-    }
-
     @Test
-    public void testCorrectURLinEmail() throws Exception {
+    public void testCorrectURLinEmail(QueryRunner queryRunner) throws Exception {
         String userNameList = "user1,12345678,user1@email.email";
 
         try (var mockedAdminDAO = mockStatic(AdminDAO.class);
@@ -89,6 +63,8 @@ public class AdminUserManagementIT {
                     .thenReturn(new AdminSystemSettings.SettingsDTO(AdminSystemSettings.SETTING_NAME.EMAILS_ENABLED, true));
             mockedAdminDAO.when(() -> AdminDAO.getSystemSetting(AdminSystemSettings.SETTING_NAME.EMAIL_ADDRESS))
                     .thenReturn(new AdminSystemSettings.SettingsDTO(AdminSystemSettings.SETTING_NAME.EMAIL_ADDRESS, "test@fake.test"));
+            mockedAdminDAO.when(() -> AdminDAO.getSystemSetting(AdminSystemSettings.SETTING_NAME.MIN_PASSWORD_LENGTH))
+                    .thenReturn(new AdminSystemSettings.SettingsDTO(AdminSystemSettings.SETTING_NAME.MIN_PASSWORD_LENGTH, 8));
             mockedEmailUtils.when(() -> EmailUtils.sendEmail(anyString(), anyString(), anyString()))
                     .thenAnswer((Answer<Boolean>) invocation -> true);
 
@@ -109,13 +85,18 @@ public class AdminUserManagementIT {
 
             Field fieldUserRepo = AdminUserManagement.class.getDeclaredField("userRepo");
             fieldUserRepo.setAccessible(true);
-            UserRepository userRepo = new UserRepository(db.getQueryRunner(), mock(MetricsRegistry.class));
+            UserRepository userRepo = new UserRepository(queryRunner, mock(MetricsRegistry.class));
             fieldUserRepo.set(adminUserManagement, userRepo);
 
             Field fieldMessages = AdminUserManagement.class.getDeclaredField("messages");
             fieldMessages.setAccessible(true);
             MessagesBean messagesBean = mock(MessagesBean.class);
             fieldMessages.set(adminUserManagement, messagesBean);
+
+            Field fieldPasswordEncoder = AdminUserManagement.class.getDeclaredField("passwordEncoder");
+            fieldPasswordEncoder.setAccessible(true);
+            PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+            fieldPasswordEncoder.set(adminUserManagement, passwordEncoder);
 
             Field fieldURLUtils = AdminUserManagement.class.getDeclaredField("url");
             fieldURLUtils.setAccessible(true);

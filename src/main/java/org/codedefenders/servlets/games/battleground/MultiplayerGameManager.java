@@ -236,7 +236,8 @@ public class MultiplayerGameManager extends HttpServlet {
         request.setAttribute("playerId", playerId);
         request.setAttribute("assistantEnabled", assistantService.isAssistantEnabledForUser(login.getUserId()));
 
-        final boolean isGameClosed = game.getState() == GameState.FINISHED || GameDAO.isGameExpired(gameId);
+        final boolean isGameClosed = game.getState() == GameState.FINISHED
+                || (game.getState() == GameState.ACTIVE && GameDAO.isGameExpired(gameId));
         final String jspPath = isGameClosed
                 ? Constants.BATTLEGROUND_DETAILS_VIEW_JSP
                 : Constants.BATTLEGROUND_GAME_VIEW_JSP;
@@ -371,7 +372,7 @@ public class MultiplayerGameManager extends HttpServlet {
 
         // Get the text submitted by the user.
         final Optional<String> test = ServletUtils.getStringParameter(request, "test");
-        if (!test.isPresent()) {
+        if (test.isEmpty()) {
             previousSubmission.clear();
             response.sendRedirect(url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
             return;
@@ -491,7 +492,7 @@ public class MultiplayerGameManager extends HttpServlet {
             // We introduce our decoration
             String decorate = GameManagingUtils.decorateWithLinksToCode(escapedHtml, true, false);
             messages.add(decorate).escape(false).fadeOut(false);
-            //
+
             previousSubmission.setTestCode(testText);
             response.sendRedirect(url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
             return;
@@ -550,7 +551,7 @@ public class MultiplayerGameManager extends HttpServlet {
         }
         // Get the text submitted by the user.
         final Optional<String> mutant = ServletUtils.getStringParameter(request, "mutant");
-        if (!mutant.isPresent()) {
+        if (mutant.isEmpty()) {
             previousSubmission.clear();
             response.sendRedirect(url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
             return;
@@ -727,7 +728,7 @@ public class MultiplayerGameManager extends HttpServlet {
         if ("accept".equals(resolveAction)) {
             // Accepting equivalence
             final Optional<Integer> equivMutantId = ServletUtils.getIntParameter(request, "equivMutantId");
-            if (!equivMutantId.isPresent()) {
+            if (equivMutantId.isEmpty()) {
                 logger.debug("Missing equivMutantId parameter.");
                 response.sendRedirect(url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
                 return;
@@ -752,7 +753,7 @@ public class MultiplayerGameManager extends HttpServlet {
 
                     // At this point we where not able to kill the mutant will all the covering
                     // tests on the same class from different games
-                    m.kill(Mutant.Equivalence.DECLARED_YES);
+                    MutantDAO.killMutant(m, Mutant.Equivalence.DECLARED_YES);
 
                     PlayerDAO.increasePlayerPoints(1, MutantDAO.getEquivalentDefenderId(m));
                     messages.add(message);
@@ -790,7 +791,7 @@ public class MultiplayerGameManager extends HttpServlet {
         } else if ("reject".equals(resolveAction)) {
             // Reject equivalence and submit killing test case
             final Optional<String> test = ServletUtils.getStringParameter(request, "test");
-            if (!test.isPresent()) {
+            if (test.isEmpty()) {
                 previousSubmission.clear();
                 response.sendRedirect(url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
                 return;
@@ -840,7 +841,7 @@ public class MultiplayerGameManager extends HttpServlet {
 
             /* TODO: Why not check this in the beginning? */
             final Optional<Integer> equivMutantId = ServletUtils.getIntParameter(request, "equivMutantId");
-            if (!equivMutantId.isPresent()) {
+            if (equivMutantId.isEmpty()) {
                 logger.info("Missing equivMutantId parameter.");
                 previousSubmission.setTestCode(testText);
                 response.sendRedirect(url.forPath(Paths.BATTLEGROUND_GAME) + "?gameId=" + gameId);
@@ -923,7 +924,7 @@ public class MultiplayerGameManager extends HttpServlet {
                         }
 
                         // only kill the one mutant that was claimed
-                        mutPending.kill(ASSUMED_YES);
+                        MutantDAO.killMutant(mutPending, ASSUMED_YES);
 
                         Event notif = new Event(-1, gameId, login.getUserId(), notification,
                                 EventType.DEFENDER_MUTANT_EQUIVALENT, EventStatus.GAME,
@@ -992,7 +993,7 @@ public class MultiplayerGameManager extends HttpServlet {
         }
 
         Optional<String> equivLinesParam = ServletUtils.getStringParameter(request, "equivLines");
-        if (!equivLinesParam.isPresent()) {
+        if (equivLinesParam.isEmpty()) {
             logger.debug("Missing 'equivLines' parameter.");
             Redirect.redirectBack(request, response);
             return;
@@ -1054,13 +1055,13 @@ public class MultiplayerGameManager extends HttpServlet {
 
     private void collectDefenderIntentions(Test newTest, Set<Integer> selectedLines, Set<Integer> selectedMutants) {
         DefenderIntention intention = new DefenderIntention(selectedLines, selectedMutants);
-        if (!intentionRepository.storeIntentionForTest(newTest, intention).isPresent()) {
+        if (intentionRepository.storeIntentionForTest(newTest, intention).isEmpty()) {
             logger.error("Could not store defender intention to database.");
         }
     }
 
     private void collectAttackerIntentions(Mutant newMutant, AttackerIntention intention) {
-        if (!intentionRepository.storeIntentionForMutant(newMutant, intention).isPresent()) {
+        if (intentionRepository.storeIntentionForMutant(newMutant, intention).isEmpty()) {
             logger.error("Could not store attacker intention to database.");
         }
     }

@@ -21,7 +21,6 @@ package org.codedefenders.validation.code;
 import java.io.IOException;
 import java.io.StreamTokenizer;
 import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -51,10 +50,8 @@ import org.slf4j.LoggerFactory;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.patch.AbstractDelta;
 import com.github.difflib.patch.Chunk;
-import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
-import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.CompactConstructorDeclaration;
 import com.github.javaparser.ast.body.ConstructorDeclaration;
@@ -68,6 +65,8 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.visitor.ModifierVisitor;
+import com.github.javaparser.ast.visitor.NoCommentEqualsVisitor;
+import com.github.javaparser.ast.visitor.NoCommentHashCodeVisitor;
 import com.github.javaparser.ast.visitor.Visitable;
 
 /**
@@ -102,7 +101,7 @@ public class CodeValidator {
 
     public static String getMD5FromFile(String filePath) {
         try {
-            String code = new String(Files.readAllBytes(Paths.get(filePath)), StandardCharsets.UTF_8);
+            String code = Files.readString(Paths.get(filePath));
             return getMD5FromText(code);
         } catch (IOException e) {
             logger.error("Could not get MD5 hash for given file.", e);
@@ -129,14 +128,15 @@ public class CodeValidator {
     // This validation pipeline should use the Chain-of-Responsibility design pattern
     public static ValidationMessage validateMutantGetMessage(String originalCode, String mutatedCode,
             CodeValidatorLevel level) {
-
-        // Literally identical
-        if (originalCode.equals(mutatedCode)) {
-            return ValidationMessage.MUTANT_VALIDATION_IDENTICAL;
+        Optional<CompilationUnit> originalParseResult = JavaParserUtils.parse(originalCode);
+        Optional<CompilationUnit> mutatedParseResult = JavaParserUtils.parse(mutatedCode);
+        if (originalParseResult.isEmpty() || mutatedParseResult.isEmpty()) {
+            return ValidationMessage.MUTANT_VALIDATION_SUCCESS;
         }
+        CompilationUnit originalCU = originalParseResult.get();
+        CompilationUnit mutatedCU = mutatedParseResult.get();
 
-        // Identical line by line by removing spaces
-        if (onlyWhitespacesChanged(originalCode, mutatedCode)) {
+        if (NoCommentEqualsVisitor.equals(originalCU, mutatedCU)) {
             return ValidationMessage.MUTANT_VALIDATION_IDENTICAL;
         }
 
@@ -144,14 +144,6 @@ public class CodeValidator {
         if (onlyLiteralsChanged(originalCode, mutatedCode)) {
             return ValidationMessage.MUTANT_VALIDATION_SUCCESS;
         }
-
-        Optional<CompilationUnit> originalParseResult = JavaParserUtils.parse(originalCode);
-        Optional<CompilationUnit> mutatedParseResult = JavaParserUtils.parse(mutatedCode);
-        if (!originalParseResult.isPresent() || !mutatedParseResult.isPresent()) {
-            return ValidationMessage.MUTANT_VALIDATION_SUCCESS;
-        }
-        CompilationUnit originalCU = originalParseResult.get();
-        CompilationUnit mutatedCU = mutatedParseResult.get();
 
         // Check if package was modified
         if (containsChangesToPackageDeclarations(originalCU, mutatedCU)) {
@@ -278,13 +270,12 @@ public class CodeValidator {
         final AtomicBoolean analyzingMutant = new AtomicBoolean(false);
 
 
-        ModifierVisitor<Void> visitor = new ModifierVisitor<Void>() {
+        ModifierVisitor<Void> visitor = new ModifierVisitor<>() {
 
             @Override
             public Visitable visit(IfStmt n, Void arg) {
                 // Extract elements from the condition
-                if (n.getCondition() instanceof InstanceOfExpr) {
-                    InstanceOfExpr expr = (InstanceOfExpr) n.getCondition();
+                if (n.getCondition() instanceof InstanceOfExpr expr) {
                     ReferenceType type = expr.getType();
 
                     // Accumulate instanceOF
@@ -390,24 +381,6 @@ public class CodeValidator {
             s = s.substring(0, indexFirstOcc) + s.substring(indexSecondOcc + 2);
         }
         return s;
-    }
-
-    private static boolean onlyWhitespacesChanged(String originalCode, String mutatedCode) {
-        String[] originalTokens = originalCode.split("\n");
-        String[] mutatedTokens = mutatedCode.split("\n");
-        if (originalTokens.length == mutatedTokens.length) {
-            for (int i = 0; i < originalTokens.length; i++) {
-                // TODO 29/10/18: Extract Mutant.regex somewhere else. This isn't mutant specific.
-                if (!originalTokens[i].replaceAll(Mutant.regex, "")
-                        .equals(mutatedTokens[i].replaceAll(Mutant.regex, ""))) {
-                    return false;
-                }
-            }
-            // Same amount of lines but all the lines are equals
-            return true;
-        }
-        // Adding a line (possibly empty) does not count as changing only white spaces
-        return false;
     }
 
     //FIXME this will not work if a string contains \"

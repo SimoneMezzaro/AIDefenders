@@ -131,7 +131,7 @@ public class Configuration {
 
             if (appUrl != null) {
                 Optional<URL> realAppUrlOpt = getApplicationURL();
-                if (!realAppUrlOpt.isPresent()) {
+                if (realAppUrlOpt.isEmpty()) {
                     validationErrors.add("Property " + resolveAttributeName("appUrl") + " has invalid format");
                 } else {
                     URL realAppUrl = realAppUrlOpt.get();
@@ -165,7 +165,7 @@ public class Configuration {
                     validationErrors.add(setupDirectory(getLibraryDir()));
                     // TODO: Replace this with something which can resolve the dependencies.
                     try (Stream<Path> entries = Files.list(getLibraryDir().toPath())) {
-                        if (!entries.findFirst().isPresent()) {
+                        if (entries.findFirst().isEmpty()) {
                             validationErrors.add("The library directory " + getLibraryDir().toPath()
                                     + " is empty! Please download the dependencies via the installation-pom.xml!");
                         }
@@ -421,11 +421,7 @@ public class Configuration {
     }
 
     public int getClusterTimeout() {
-        if (clusterTimeout == null) {
-            return -1;
-        } else {
-            return clusterTimeout;
-        }
+        return Objects.requireNonNullElse(clusterTimeout, -1);
     }
 
     public boolean isForceLocalExecution() {
@@ -449,11 +445,8 @@ public class Configuration {
     }
 
     public int getNumberOfKillmapThreads() {
-        if (parallelizeKillmapCount == null) {
-            return Runtime.getRuntime().availableProcessors();
-        } else {
-            return parallelizeKillmapCount;
-        }
+        return Objects.requireNonNullElseGet(clusterTimeout,
+                () -> Runtime.getRuntime().availableProcessors());
     }
 
     public boolean isMetricsCollectionEnabled() {

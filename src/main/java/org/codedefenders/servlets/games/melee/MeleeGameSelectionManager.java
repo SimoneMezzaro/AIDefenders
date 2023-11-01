@@ -50,7 +50,6 @@ import org.codedefenders.notification.INotificationService;
 import org.codedefenders.notification.events.server.game.GameCreatedEvent;
 import org.codedefenders.notification.events.server.game.GameJoinedEvent;
 import org.codedefenders.notification.events.server.game.GameLeftEvent;
-import org.codedefenders.notification.events.server.game.GameStartedEvent;
 import org.codedefenders.persistence.database.UserRepository;
 import org.codedefenders.service.game.GameService;
 import org.codedefenders.service.game.MeleeGameService;
@@ -246,17 +245,16 @@ public class MeleeGameSelectionManager extends HttpServlet {
             gje.setUserName(login.getSimpleUser().getName());
             notificationService.post(gje);
 
-            // TODO The following notification is duplicated as MeleeGame.addPlayer also
-            // trigger that.
-            // I leave it here because I believe the problem is having notifications inside
-            // DataObjects like MeleeGame.
+            // TODO The following notification is duplicated as MeleeGame.addPlayer also trigger that.
+            // I leave it here because I believe the problem is having notifications inside DataObjects like MeleeGame.
             // Note that MeleeGame has more than one notification.
-//            final EventType notifType = EventType.PLAYER_JOINED;
-//            final String message = "You successfully joined the game.";
-//            final EventStatus eventStatus = EventStatus.NEW;
-//            final Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-//            Event notif = new Event(-1, gameId, login.getUserId(), message, notifType, eventStatus, timestamp);
-//            eventDAO.insert(notif);
+
+            // final EventType notifType = EventType.PLAYER_JOINED;
+            // final String message = "You successfully joined the game.";
+            // final EventStatus eventStatus = EventStatus.NEW;
+            // final Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            // Event notif = new Event(-1, gameId, login.getUserId(), message, notifType, eventStatus, timestamp);
+            // eventDAO.insert(notif);
 
             response.sendRedirect(url.forPath(Paths.MELEE_GAME) + "?gameId=" + gameId);
         } else {
@@ -317,13 +315,6 @@ public class MeleeGameSelectionManager extends HttpServlet {
             gameService.startGame(game);
         }
 
-        /*
-         * Publish the event about the user
-         */
-        GameStartedEvent gse = new GameStartedEvent();
-        gse.setGameId(game.getId());
-        notificationService.post(gse);
-
         response.sendRedirect(url.forPath(Paths.MELEE_GAME) + "?gameId=" + gameId);
     }
 
@@ -376,7 +367,7 @@ public class MeleeGameSelectionManager extends HttpServlet {
         }
 
         Optional<Integer> newDuration = getIntParameter(request, "newDuration");
-        if (!newDuration.isPresent()) {
+        if (newDuration.isEmpty()) {
             logger.debug("No duration value supplied.");
             Redirect.redirectBack(request, response);
             return;

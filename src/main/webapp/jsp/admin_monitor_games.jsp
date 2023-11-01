@@ -577,23 +577,23 @@
 
         $('#togglePlayersActiveMultiplayer').on('change', function () {
             const showPlayers = this.checked;
-            localStorage.setItem("showActivePlayersMultiplayer", JSON.stringify(showPlayers));
+            sessionStorage.setItem("showActivePlayersMultiplayer", JSON.stringify(showPlayers));
             showMultiplayerDetails(showPlayers);
         });
 
         $('#togglePlayersActiveMelee').on('change', function () {
             const showPlayers = this.checked;
-            localStorage.setItem("showActivePlayersMelee", JSON.stringify(showPlayers));
+            sessionStorage.setItem("showActivePlayersMelee", JSON.stringify(showPlayers));
             showMeleeDetails(showPlayers);
         });
 
 
         /* Check only in the local table if all checkboxes are checked. */
         function setSelectAllCheckbox(checkboxesName, selectAllCheckboxId) {
-            var checkboxes = $(this).closest('table')
+            const checkboxes = $(this).closest('table')
                     .find('tbody')
                     .find("[name='" + checkboxesName + "']");
-            var allChecked = false;
+            let allChecked = false;
             checkboxes.each(function (index, element) {
                 allChecked = allChecked && element.checked;
             });
@@ -602,8 +602,8 @@
 
         /* Check in both tables if any checkboxes are checked. */
         function areAnyChecked(name) {
-            var checkboxes = $("[name='" + name + "']");
-            var anyChecked = false;
+            const checkboxes = $("[name='" + name + "']");
+            let anyChecked = false;
             checkboxes.each(function (index, element) {
                 anyChecked = anyChecked || element.checked;
             });
@@ -611,11 +611,11 @@
         }
 
         $(document).ready(function () {
-            const showMultiplayer = localStorage.getItem("showActivePlayersMultiplayer") === "true";
+            const showMultiplayer = sessionStorage.getItem("showActivePlayersMultiplayer") === "true";
             document.getElementById('togglePlayersActiveMultiplayer').checked = showMultiplayer;
             showMultiplayerDetails(showMultiplayer);
 
-            const showMelee = localStorage.getItem("showActivePlayersMelee") === "true";
+            const showMelee = sessionStorage.getItem("showActivePlayersMelee") === "true";
             document.getElementById('togglePlayersActiveMelee').checked = showMelee;
             showMeleeDetails(showMelee);
         });

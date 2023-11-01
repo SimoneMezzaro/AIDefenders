@@ -65,7 +65,9 @@
 
 <jsp:useBean id="testEditor" class="org.codedefenders.beans.game.TestEditorBean" scope="request"/>
 <%
-    testEditor.setEditableLinesForPuzzle(puzzle);
+    // Set editable lines from class since they depend on the generated test template
+    testEditor.setEditableLinesForClass(cut);
+
     testEditor.setMockingEnabled(false);
     testEditor.setAssertionLibrary(cut.getAssertionLibrary());
     if (previousSubmission.hasTest()) {
@@ -112,8 +114,6 @@
 <jsp:include page="/jsp/header.jsp"/>
 
 <link href="${url.forPath("/css/specific/game.css")}" rel="stylesheet">
-
-<jsp:include page="/jsp/push_socket.jsp"/>
 
 <div id="game-container" class="container-fluid">
 

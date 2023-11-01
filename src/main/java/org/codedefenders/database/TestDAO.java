@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.codedefenders.database.DB.RSMapper;
 import org.codedefenders.execution.TargetExecution;
@@ -38,10 +39,12 @@ import org.codedefenders.game.Test;
 import org.codedefenders.persistence.database.util.QueryRunner;
 import org.codedefenders.util.CDIUtil;
 import org.codedefenders.util.FileUtils;
+import org.intellij.lang.annotations.Language;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.codedefenders.util.Constants.DUMMY_DEFENDER_USER_ID;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * This class handles the database logic for tests.
@@ -100,7 +103,7 @@ public class TestDAO {
      * Returns the {@link Test} for the given test id.
      */
     public static Test getTestById(int testId) throws UncheckedSQLException, SQLMappingException {
-        String query = "SELECT * FROM tests WHERE Test_ID = ?;";
+        @Language("SQL") String query = "SELECT * FROM tests WHERE Test_ID = ?;";
         return DB.executeQueryReturnValue(query, TestDAO::testFromRS, DatabaseValue.of(testId));
     }
 
@@ -108,19 +111,19 @@ public class TestDAO {
      * Returns the {@link Test Tests} from the given game.
      */
     public static List<Test> getTestsForGame(int gameId) throws UncheckedSQLException, SQLMappingException {
-        String query = "SELECT * FROM tests WHERE Game_ID = ?;";
+        @Language("SQL") String query = "SELECT * FROM tests WHERE Game_ID = ?;";
         return DB.executeQueryReturnList(query, TestDAO::testFromRS, DatabaseValue.of(gameId));
     }
 
     public static List<Test> getTestsForGameAndUser(int gameId, int userId)
             throws UncheckedSQLException, SQLMappingException {
-        String query = String.join("\n",
-                "SELECT * FROM tests ",
-                "LEFT JOIN players ON players.ID = tests.Player_ID ",
-                "LEFT JOIN users ON players.User_ID = users.User_ID ",
-                "WHERE tests.Game_ID = ?",
-                "  AND players.User_ID = ?",
-                ";");
+        @Language("SQL") String query = """
+                SELECT * FROM tests
+                LEFT JOIN players ON players.ID = tests.Player_ID
+                LEFT JOIN users ON players.User_ID = users.User_ID
+                WHERE tests.Game_ID = ?
+                  AND players.User_ID = ?;
+        """;
         return DB.executeQueryReturnList(query,
                 TestDAO::testFromRS,
                 DatabaseValue.of(gameId),
@@ -133,13 +136,13 @@ public class TestDAO {
      */
     public static List<Test> getTestsForGameAndPlayer(int gameId, int playerId)
             throws UncheckedSQLException, SQLMappingException {
-        String query = String.join("\n",
-                "SELECT * FROM tests ",
-                "LEFT JOIN players ON players.ID = tests.Player_ID ",
-                "LEFT JOIN users ON players.User_ID = users.User_ID ",
-                "WHERE tests.Game_ID = ?",
-                "  AND tests.Player_ID = ?",
-                ";");
+        @Language("SQL") String query = """
+                SELECT * FROM tests
+                LEFT JOIN players ON players.ID = tests.Player_ID
+                LEFT JOIN users ON players.User_ID = users.User_ID
+                WHERE tests.Game_ID = ?
+                  AND tests.Player_ID = ?;
+        """;
         return DB.executeQueryReturnList(query, TestDAO::testFromRS,
                 DatabaseValue.of(gameId), DatabaseValue.of(playerId));
     }
@@ -148,6 +151,8 @@ public class TestDAO {
      * Returns the valid {@link Test Tests} from the given game.
      * Valid tests are compilable and do not fail when executed against the original class.
      *
+     * <p>This includes valid user-submitted mutants as well as instances of predefined mutants in the game.
+     *
      * @param gameId        the identifier of the given game.
      * @param defendersOnly If {@code true}, only return tests that were written by defenders.
      *                      Include also the tests uploaded by the System Defender
@@ -155,35 +160,18 @@ public class TestDAO {
      */
     public static List<Test> getValidTestsForGame(int gameId, boolean defendersOnly)
             throws UncheckedSQLException, SQLMappingException {
-        List<Test> result = new ArrayList<>();
-
-        String query = String.join("\n",
-                "SELECT t.*",
-                "FROM view_valid_tests t",
-                (defendersOnly ? "INNER JOIN players pl on t.Player_ID = pl.ID" : ""),
-                "WHERE t.Game_ID=?",
-                (defendersOnly ? "AND (pl.Role='DEFENDER' OR pl.Role='PLAYER');" : ";")
-        );
-        result.addAll(DB.executeQueryReturnList(query, TestDAO::testFromRS, DatabaseValue.of(gameId)));
-
-        String systemDefenderQuery = String.join("\n",
-                "SELECT tests.*",
-                "FROM tests",
-                "INNER JOIN players pl on tests.Player_ID = pl.ID",
-                "INNER JOIN users u on u.User_ID = pl.User_ID",
-                "WHERE tests.Game_ID = ?",
-                "  AND tests.ClassFile IS NOT NULL",
-                "  AND u.User_ID = ?;"
+        @Language("SQL") String query = """
+                SELECT t.*
+                FROM view_valid_game_tests t
+                %s
+                WHERE t.Game_ID = ?
+                %s
+        """.formatted(
+                defendersOnly ? "INNER JOIN players pl on t.Player_ID = pl.ID" : "",
+                defendersOnly ? "AND (pl.Role = 'DEFENDER' OR pl.Role = 'PLAYER');" : ";"
         );
 
-        DatabaseValue<?>[] values = new DatabaseValue[]{
-                DatabaseValue.of(gameId),
-                DatabaseValue.of(DUMMY_DEFENDER_USER_ID)
-        };
-
-        result.addAll(DB.executeQueryReturnList(systemDefenderQuery, TestDAO::testFromRS, values));
-
-        return result;
+        return DB.executeQueryReturnList(query, TestDAO::testFromRS, DatabaseValue.of(gameId));
     }
 
     public static List<Test> getValidTestsForGameSubmittedAfterMutant(int gameId, boolean defendersOnly,
@@ -195,13 +183,17 @@ public class TestDAO {
          */
         // TODO Not sure if using table 'mutants' here is correct or we
         // need to use some view instead...
-        String query = String.join("\n",
-                "SELECT t.*",
-                "FROM view_valid_tests t",
-                (defendersOnly ? "INNER JOIN players pl on t.Player_ID = pl.ID" : ""),
-                "WHERE t.Timestamp >= (select mutants.Timestamp from mutants where mutants.Mutant_ID = ? )",
-                "  AND t.Game_ID=? ",
-                (defendersOnly ? "AND pl.Role='DEFENDER';" : ";"));
+        @Language("SQL") String query = """
+                SELECT t.*
+                FROM view_valid_game_tests t
+                %s,
+                WHERE t.Timestamp >= (select mutants.Timestamp from mutants where mutants.Mutant_ID = ? )
+                  AND t.Game_ID=?
+                %s
+        """.formatted(
+                defendersOnly ? "INNER JOIN players pl on t.Player_ID = pl.ID" : "",
+                defendersOnly ? "AND pl.Role='DEFENDER';" : ";"
+        );
         return DB.executeQueryReturnList(query, TestDAO::testFromRS,
                 DatabaseValue.of(aliveMutant.getId()),
                 DatabaseValue.of(gameId));
@@ -211,34 +203,66 @@ public class TestDAO {
      * Returns the valid {@link Test Tests} from the games played on the given class.
      * Valid tests are compilable and do not fail when executed against the original class.
      *
-     * <p>Include also the tests from the System Defender
+     * <p>This includes valid user-submitted mutants as well as templates of predefined mutants
+     * (not the instances that are copied into games).
      *
      * @param classId the identifier of the given class.
      * @return a {@link List} of valid tests for the given class.
      */
     public static List<Test> getValidTestsForClass(int classId) throws UncheckedSQLException, SQLMappingException {
-        List<Test> result = new ArrayList<>();
+        @Language("SQL") String query = """
+                WITH tests_for_class AS
+                   (SELECT * FROM view_valid_user_tests UNION ALL SELECT * FROM view_system_test_templates)
 
-        String query = String.join("\n",
-                "SELECT t.*",
-                "FROM view_valid_tests t, games",
-                "WHERE t.Game_ID = games.ID",
-                "  AND games.Class_ID = ?;"
-        );
-        result.addAll(DB.executeQueryReturnList(query, TestDAO::testFromRS, DatabaseValue.of(classId)));
+                SELECT *
+                FROM tests_for_class tests
+                WHERE tests.Class_ID = ?;
+        """;
 
-        // Include also those tests uploaded, i.e, player_id = -1
-        String systemDefenderQuery = String.join("\n",
-                "SELECT tests.*",
-                "FROM tests, test_uploaded_with_class up",
-                "WHERE tests.Test_ID = up.Test_ID",
-                "  AND up.Class_ID = ?",
-                "  AND tests.ClassFile IS NOT NULL;"
-        );
+        return DB.executeQueryReturnList(query, TestDAO::testFromRS, DatabaseValue.of(classId));
+    }
 
-        result.addAll(DB.executeQueryReturnList(systemDefenderQuery, TestDAO::testFromRS, DatabaseValue.of(classId)));
+    /**
+     * Returns the valid {@link Test Tests} from the games played on the given class.
+     *
+     * <p>This includes valid user-submitted tests from classroom games as well as templates of predefined tests
+     * for classes used in the classroom.
+     */
+    public static Multimap<Integer, Test> getValidTestsForClassroom(int classroomId)
+            throws UncheckedSQLException, SQLMappingException {
+        @Language("SQL") String query = """
+                WITH relevant_classes AS (
+                    SELECT DISTINCT games.Class_ID
+                    FROM games
+                    WHERE games.Classroom_ID = ?
+                ),
 
-        return result;
+                classroom_system_tests AS (
+                    SELECT tests.*
+                    FROM view_system_test_templates tests
+                    WHERE tests.Class_ID IN (SELECT * FROM relevant_classes)
+                ),
+
+                classroom_user_tests AS (
+                    SELECT tests.*
+                    FROM view_valid_user_tests tests, games
+                    WHERE tests.Game_ID = games.ID
+                    AND games.Classroom_ID = ?
+                )
+
+                SELECT * FROM classroom_system_tests
+                UNION ALL
+                SELECT * FROM classroom_user_tests;
+        """;
+
+        List<Test> tests = DB.executeQueryReturnList(query, TestDAO::testFromRS,
+                DatabaseValue.of(classroomId), DatabaseValue.of(classroomId));
+
+        Multimap<Integer, Test> testsMap = ArrayListMultimap.create();
+        for (Test test : tests) {
+            testsMap.put(test.getClassId(), test);
+        }
+        return testsMap;
     }
 
     /**
@@ -279,10 +303,11 @@ public class TestDAO {
                     .collect(Collectors.joining(","));
         }
 
-        String query = String.join("\n",
-                "INSERT INTO tests (JavaFile, ClassFile, Game_ID, RoundCreated, MutantsKilled, Player_ID,",
-                "Points, Class_ID, Lines_Covered, Lines_Uncovered)",
-                "VALUES (?,?,?,?,?,?,?,?,?,?);");
+        @Language("SQL") String query = """
+                INSERT INTO tests (JavaFile, ClassFile, Game_ID, RoundCreated, MutantsKilled, Player_ID,
+                                   Points, Class_ID, Lines_Covered, Lines_Uncovered)
+                VALUES (?,?,?,?,?,?,?,?,?,?);
+        """;
         DatabaseValue<?>[] values = new DatabaseValue[]{
                 DatabaseValue.of(relativeJavaFile),
                 DatabaseValue.of(relativeClassFile),
@@ -333,7 +358,14 @@ public class TestDAO {
         }
 
 
-        String query = "UPDATE tests SET mutantsKilled=?,Lines_Covered=?,Lines_Uncovered=?,Points=? WHERE Test_ID=?;";
+        @Language("SQL") String query = """
+            UPDATE tests
+            SET mutantsKilled = ?,
+                Lines_Covered = ?,
+                Lines_Uncovered = ?,
+                Points = ?
+            WHERE Test_ID = ?;
+        """;
         DatabaseValue<?>[] values = new DatabaseValue[]{
                 DatabaseValue.of(mutantsKilled),
                 DatabaseValue.of(linesCoveredString),
@@ -353,10 +385,10 @@ public class TestDAO {
      * @return {@code true} whether storing the mapping was successful, {@code false} otherwise.
      */
     public static boolean mapTestToClass(int testId, int classId) {
-        String query = String.join("\n",
-                "INSERT INTO test_uploaded_with_class (Test_ID, Class_ID)",
-                "VALUES (?, ?);"
-        );
+        @Language("SQL") String query = """
+                INSERT INTO test_uploaded_with_class (Test_ID, Class_ID)
+                VALUES (?, ?);
+        """;
         DatabaseValue<?>[] values = new DatabaseValue[]{
                 DatabaseValue.of(testId),
                 DatabaseValue.of(classId)
@@ -372,10 +404,10 @@ public class TestDAO {
      * @return {@code true} for successful removal, {@code false} otherwise.
      */
     public static boolean removeTestForId(Integer id) {
-        String query = String.join("\n",
-                "DELETE FROM tests WHERE Test_ID = ?;",
-                "DELETE FROM test_uploaded_with_class WHERE Test_ID = ?;"
-        );
+        @Language("SQL") String query = """
+                DELETE FROM tests WHERE Test_ID = ?;
+                DELETE FROM test_uploaded_with_class WHERE Test_ID = ?;
+        """;
 
         return DB.executeUpdateQuery(query, DatabaseValue.of(id));
     }
@@ -391,19 +423,18 @@ public class TestDAO {
             return false;
         }
 
-        final StringBuilder bob = new StringBuilder("(");
-        for (int i = 0; i < tests.size() - 1; i++) {
-            bob.append("?,");
-        }
-        bob.append("?);");
+        String range = Stream.generate(() -> "?")
+                .limit(tests.size())
+                .collect(Collectors.joining(","));
 
-        final String range = bob.toString();
-        String query = String.join("\n",
-                "DELETE FROM tests",
-                " WHERE Test_ID in ",
+        @Language("SQL") String query = """
+                DELETE FROM tests
+                WHERE Test_ID in (%s);
+
+                DELETE FROM test_uploaded_with_class
+                WHERE Test_ID in (%s);
+        """.formatted(
                 range,
-                "DELETE FROM test_uploaded_with_class",
-                "WHERE Test_ID in ",
                 range
         );
 
@@ -418,15 +449,18 @@ public class TestDAO {
      * Returns the id of the first Test (from the same game) that killed the mutant with the provided ID.
      */
     public static int getKillingTestIdForMutant(int mutantId) {
-        String query = "SELECT te.* "
-                + "FROM targetexecutions te "
-                + "JOIN mutants m on m.Mutant_ID = te.Mutant_ID "
-                + "JOIN tests t on te.Test_ID = t.Test_ID "
-                + "WHERE te.Target = ? "
-                + "  AND te.Status != ? "
-                + "  AND t.Game_ID = m.Game_ID"
-                + "  AND te.Mutant_ID = ? "
-                + "ORDER BY te.TargetExecution_ID LIMIT 1;";
+        @Language("SQL") String query = """
+                SELECT te.*
+                FROM targetexecutions te
+                JOIN mutants m on m.Mutant_ID = te.Mutant_ID
+                JOIN tests t on te.Test_ID = t.Test_ID
+                WHERE te.Target = ?
+                  AND te.Status != ?
+                  AND t.Game_ID = m.Game_ID
+                  AND te.Mutant_ID = ?
+                ORDER BY te.TargetExecution_ID LIMIT 1;
+        """;
+
         DatabaseValue<?>[] values = new DatabaseValue[]{
                 DatabaseValue.of(TargetExecution.Target.TEST_MUTANT.name()),
                 DatabaseValue.of(TargetExecution.Status.SUCCESS.name()),
@@ -453,21 +487,27 @@ public class TestDAO {
      * Returns the Mutants (from the same game) that got killed by the Test with the provided ID.
      */
     public static Set<Mutant> getKilledMutantsForTestId(int testId) {
-        String query = "SELECT * FROM (SELECT TargetExecution_ID, "
-                + "                      te.Test_ID, "
-                + "                      m.*, "
-                + "                      RANK() over (PARTITION BY te.Mutant_ID ORDER BY TargetExecution_ID) AS ranks "
-                + "               FROM targetexecutions te "
-                + "                        JOIN mutants m on m.Mutant_ID = te.Mutant_ID "
-                + "                        JOIN tests t on te.Test_ID = t.Test_ID "
-                + "               WHERE te.Target = ? "
-                + "                 AND te.Status != ? "
-                + "                 AND t.Game_ID = m.Game_ID "
-                + "                 AND t.Game_ID = (SELECT Game_ID "
-                + "                                  FROM tests "
-                + "                                  WHERE Test_ID = ?) "
-                + "               ORDER BY Mutant_ID, TargetExecution_ID) tmp "
-                + "WHERE Test_ID = ? AND ranks = 1;";
+        @Language("SQL") String query = """
+                SELECT * FROM (
+                    SELECT TargetExecution_ID,
+                           te.Test_ID,
+                           m.*,
+                           RANK() over (PARTITION BY te.Mutant_ID ORDER BY TargetExecution_ID) AS ranks
+                    FROM targetexecutions te
+                    JOIN mutants m on m.Mutant_ID = te.Mutant_ID
+                    JOIN tests t on te.Test_ID = t.Test_ID
+                    WHERE te.Target = ?
+                      AND te.Status != ?
+                      AND t.Game_ID = m.Game_ID
+                      AND t.Game_ID = (
+                          SELECT Game_ID
+                          FROM tests
+                          WHERE Test_ID = ?
+                      )
+                    ORDER BY Mutant_ID, TargetExecution_ID
+                ) tmp
+                WHERE Test_ID = ? AND ranks = 1;
+        """;
         DatabaseValue<?>[] values = new DatabaseValue[]{
                 DatabaseValue.of(TargetExecution.Target.TEST_MUTANT.name()),
                 DatabaseValue.of(TargetExecution.Status.SUCCESS.name()),
@@ -486,7 +526,7 @@ public class TestDAO {
             return;
         }
 
-        String query = "UPDATE tests SET Points = Points + ? WHERE Test_ID=?;";
+        @Language("SQL") String query = "UPDATE tests SET Points = Points + ? WHERE Test_ID=?;";
 
         try {
             boolean incremented = CDIUtil.getBeanFromCDI(QueryRunner.class).update(query,
@@ -504,7 +544,7 @@ public class TestDAO {
         // update();
         logger.info("Test {} killed a new mutant", test.getId());
 
-        String query = "UPDATE tests SET MutantsKilled = MutantsKilled + ? WHERE Test_ID=?;";
+        @Language("SQL") String query = "UPDATE tests SET MutantsKilled = MutantsKilled + ? WHERE Test_ID=?;";
 
         try {
             boolean updated = CDIUtil.getBeanFromCDI(QueryRunner.class).update(query,1, test.getId()) > 0;
