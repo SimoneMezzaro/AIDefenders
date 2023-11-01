@@ -46,18 +46,39 @@ public class AssistantServlet extends HttpServlet {
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        Map<String, String> responseBody = new HashMap<>();
         AbstractGame game = gameProducer.getGame();
         String redirectUrl = computeRedirectUrlIfGameIsValid(request, response, game);
         if(redirectUrl == null){
             return;
         }
-        int playerId = PlayerDAO.getPlayerIdForUserAndGame(login.getUserId(), game.getId());
-        if(!assistantService.isAssistantEnabledForUser(login.getUserId())) {
+        int userId = login.getUserId();
+        int playerId = PlayerDAO.getPlayerIdForUserAndGame(userId, game.getId());
+        if(!assistantService.isAssistantEnabledForUser(userId)) {
             sendRedirectWithMessage(response, "Your smart assistant is currently disabled", redirectUrl);
             return;
         }
-        List<AssistantQuestionEntity> questionsList = assistantService.getQuestionsByPlayer(playerId);
-        sendJson(response, questionsList);
+        String action = request.getParameter("action");
+        if(action == null) {
+            logger.info("Failed to process get request because the request action is missing");
+            sendRedirectWithMessage(response, "Unable to get previous questions", redirectUrl);
+            return;
+        }
+        switch (action) {
+            case "previousQuestions" -> {
+                List<AssistantQuestionEntity> questionsList = assistantService.getQuestionsByPlayer(playerId);
+                sendJson(response, questionsList);
+            }
+            case "remainingQuestions" -> {
+                int remainingQuestions = assistantService.getRemainingQuestionsForUser(userId);
+                responseBody.put("remainingQuestions", Integer.toString(remainingQuestions));
+                sendJson(response, responseBody);
+            }
+            default -> {
+                logger.info("Failed to process get request because the request action is malformed");
+                sendRedirectWithMessage(response, "Unable to get previous questions", redirectUrl);
+            }
+        }
     }
 
     @Override
@@ -100,11 +121,17 @@ public class AssistantServlet extends HttpServlet {
             sendRedirectWithMessage(response, "Your question is too long. Use at most 1500 words", redirectUrl);
             return;
         }
-        int playerId = PlayerDAO.getPlayerIdForUserAndGame(login.getUserId(), game.getId());
+        int userId = login.getUserId();
+        if(!assistantService.checkAndDecrementRemainingQuestions(userId)) {
+            sendRedirectWithMessage(response, "Question refused. You have reached your questions quota!", redirectUrl);
+            return;
+        }
+        int playerId = PlayerDAO.getPlayerIdForUserAndGame(userId, game.getId());
         AssistantQuestionEntity question = new AssistantQuestionEntity(questionText, playerId);
         try {
             question = assistantService.sendQuestion(question, game);
         } catch (GPTException e) {
+            assistantService.incrementRemainingQuestions(userId);
             sendRedirectWithMessage(response, "The smart assistant encountered an error!\n" +
                     "Please try again and contact your administrator if this keeps happening", redirectUrl);
             return;

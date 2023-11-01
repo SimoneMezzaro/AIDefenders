@@ -38,16 +38,19 @@ public class AssistantUserSettingsRepository {
         String username = rs.getString("Username");
         String email = rs.getString("Email");
         Integer questionsNumber = rs.getInt("Questions_number");
+        Integer remainingQuestions = rs.getInt("Remaining_questions");
         String assistantType = rs.getString("Assistant_type");
         if(rs.wasNull()) {
             assistantType = "NONE";
         }
-        return new AssistantUserSettingsEntity(id, userId, username, email, questionsNumber, SmartAssistantType.valueOf(assistantType));
+        return new AssistantUserSettingsEntity(id, userId, username, email, questionsNumber, remainingQuestions,
+                SmartAssistantType.valueOf(assistantType));
     }
 
     // get all users settings
     public List<AssistantUserSettingsEntity> getAllAssistantUserSettings() {
-        @Language("SQL") String query = "SELECT a.ID, u.User_ID, u.Username, u.Email, a.Questions_number, a.Assistant_type " +
+        @Language("SQL") String query = "SELECT a.ID, u.User_ID, u.Username, u.Email, " +
+                "a.Questions_number, a.Remaining_questions, a.Assistant_type " +
                 "FROM view_valid_users AS u LEFT JOIN assistant_user_settings AS a ON u.User_ID = a.User_ID " +
                 "WHERE u.Active = 1 " +
                 "ORDER BY u.Username";
@@ -62,7 +65,8 @@ public class AssistantUserSettingsRepository {
 
     // get settings of given user
     public Optional<AssistantUserSettingsEntity> getAssistantUserSettingsByUserId(int userId) {
-        @Language("SQL") String query = "SELECT a.ID, u.User_ID, u.Username, u.Email, a.Questions_number, a.Assistant_type " +
+        @Language("SQL") String query = "SELECT a.ID, u.User_ID, u.Username, u.Email, " +
+                "a.Questions_number, a.Remaining_questions, a.Assistant_type " +
                 "FROM view_valid_users AS u LEFT JOIN assistant_user_settings AS a ON u.User_ID = a.User_ID " +
                 "WHERE u.User_ID = ? ";
         try {
@@ -74,13 +78,18 @@ public class AssistantUserSettingsRepository {
         }
     }
 
-    // insert settings of given user
-    public Optional<Integer> updateAssistantUserSettings(int userId, SmartAssistantType assistantType) {
-        @Language("SQL") String query = "INSERT INTO assistant_user_settings (User_ID, Assistant_type) VALUES (?, ?) " +
-                "ON DUPLICATE KEY UPDATE Assistant_type = ?;";
+    // insert or update settings of given user
+    public Optional<Integer> updateAssistantUserSettings(AssistantUserSettingsEntity settings) {
+        int userId = settings.getUserId();
+        int remainingQuestionsDelta = settings.getRemainingQuestionsDelta();
+        SmartAssistantType assistantType = settings.getAssistantType();
+        @Language("SQL") String query = "INSERT INTO assistant_user_settings (User_ID, Remaining_questions, Assistant_type) " +
+                "VALUES (?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE Remaining_questions = Remaining_questions + ?, Assistant_type = ?;";
         try {
-            return queryRunner.insert(query, nextFromRS(rs -> rs.getInt(1)), userId,
-                    assistantType.toString(), assistantType.toString());
+            return queryRunner.insert(query, nextFromRS(rs -> rs.getInt(1)),
+                    userId, remainingQuestionsDelta, assistantType.toString(),
+                    remainingQuestionsDelta, assistantType.toString());
         } catch (SQLException e) {
             logger.error("SQLException while executing query", e);
             throw new UncheckedSQLException("SQLException while executing query", e);

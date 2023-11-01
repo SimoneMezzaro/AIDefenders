@@ -18,7 +18,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.codedefenders.beans.message.MessagesBean;
 import org.codedefenders.model.AssistantPromptEntity;
-import org.codedefenders.model.SmartAssistantType;
+import org.codedefenders.model.AssistantUserSettingsEntity;
 import org.codedefenders.service.UserService;
 import org.codedefenders.util.Constants;
 import org.codedefenders.util.Paths;
@@ -45,7 +45,7 @@ public class AdminAssistantSettings extends HttpServlet {
 
     private static class PostBody {
         private String action;
-        private Map<Integer, SmartAssistantType> usersSettings;
+        private List<AssistantUserSettingsEntity> usersSettings;
         private String prompt;
         private Boolean defaultFlag;
         private Boolean assistantEnabled;
@@ -162,13 +162,20 @@ public class AdminAssistantSettings extends HttpServlet {
         }
     }
 
-    private void postUsersSettingsUpdate(HttpServletResponse response, Map<Integer, SmartAssistantType> usersSettings)
+    private void postUsersSettingsUpdate(HttpServletResponse response, List<AssistantUserSettingsEntity> usersSettings)
             throws IOException {
         Map<String, String> responseBody = new HashMap<>();
         boolean isUpdateValid = true;
-        for(Integer userId : usersSettings.keySet()) {
-            if(userService.getSimpleUserById(userId).isEmpty()) {
+        for(AssistantUserSettingsEntity userSettings : usersSettings) {
+            Integer userId = userSettings.getUserId();
+            if(userId == null || userService.getSimpleUserById(userId).isEmpty()) {
                 messages.add("Operation failed because user " + userId + " does not exist");
+                isUpdateValid = false;
+            } else if(userSettings.getRemainingQuestionsDelta() == null) {
+                messages.add("Operation failed because amount of remaining questions is missing for user " + userId);
+                isUpdateValid = false;
+            } else if(userSettings.getAssistantType() == null) {
+                messages.add("Operation failed because assistant type is missing for user " + userId);
                 isUpdateValid = false;
             }
         }

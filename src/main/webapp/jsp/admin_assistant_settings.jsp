@@ -20,8 +20,10 @@
                     <th>ID</th>
                     <th>User</th>
                     <th>Email</th>
-                    <th>Total Questions</th>
+                    <th>Total Questions Sent</th>
+                    <th>Remaining Questions</th>
                     <th>Smart Assistant</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="users-settings-table-body">
@@ -31,10 +33,18 @@
 
         <div class="row g-2 justify-content-end">
             <div class="col-auto">
-                <button type="submit" class="btn btn-primary" id="users-save-btn">Save</button>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <button class="btn btn-primary" type="button" id="add-remove-remaining-btn">Add/Remove Remaining Questions</button>
+                    </div>
+                    <input type="number" class="form-control" value="0" id="add-remove-remaining-value">
+                </div>
             </div>
             <div class="col-auto">
-                <button type="button" class="btn btn-secondary" id="users-cancel-btn">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="users-enable-all-btn">Enable All</button>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-secondary" id="users-disable-all-btn">Disable All</button>
             </div>
         </div>
 
@@ -171,14 +181,23 @@
             function UsersSettingsManager() {
 
                 this.currentSettings = [];
-                this.changesMap = {};
 
                 this.registerEvents = function() {
-                    document.getElementById("users-save-btn").addEventListener("click", (e) => {
+                    document.getElementById("users-enable-all-btn").addEventListener("click", (e) => {
                         e.preventDefault();
+                        let changesList = [];
+                        for(let user of this.currentSettings) {
+                            if(user["assistantType"] === "NONE") {
+                                changesList.push({
+                                    "userId": user["userId"],
+                                    "assistantType": "NOT_GUIDED",
+                                    "remainingQuestionsDelta": 0
+                                });
+                            }
+                        }
                         let body = {
                             "action": "usersSettingsUpdate",
-                            "usersSettings": this.changesMap
+                            "usersSettings": changesList
                         };
                         body = JSON.stringify(body);
                         makePostRequest("/admin/assistant", "application/json;charset=UTF-8", body, (request) => {
@@ -212,10 +231,99 @@
                         });
                     });
 
-                    document.getElementById("users-cancel-btn").addEventListener("click", (e) => {
+                    document.getElementById("users-disable-all-btn").addEventListener("click", (e) => {
                         e.preventDefault();
-                        this.changesMap = {};
-                        this.updateUsersSettingsList(this.currentSettings);
+                        let changesList = [];
+                        for(let user of this.currentSettings) {
+                            if(user["assistantType"] === "NOT_GUIDED") {
+                                changesList.push({
+                                    "userId": user["userId"],
+                                    "assistantType": "NONE",
+                                    "remainingQuestionsDelta": 0
+                                });
+                            }
+                        }
+                        let body = {
+                            "action": "usersSettingsUpdate",
+                            "usersSettings": changesList
+                        };
+                        body = JSON.stringify(body);
+                        makePostRequest("/admin/assistant", "application/json;charset=UTF-8", body, (request) => {
+                            if(request.readyState === XMLHttpRequest.DONE) {
+                                if(request.status === 200) {
+                                    let responseBody = request.responseText;
+                                    let bodyType = request.getResponseHeader("Content-Type");
+                                    if(bodyType === "application/json;charset=UTF-8") {
+                                        responseBody = JSON.parse(responseBody);
+                                        window.location.replace(responseBody.redirect);
+                                    }
+                                    else {
+                                        history.replaceState(null, "", request.responseURL);
+                                        document.open();
+                                        document.write(responseBody);
+                                        document.close();
+                                        // The browser back button appears to go back 2 times since the displayed html
+                                        // is not in a real new page
+                                    }
+                                }
+                                else {
+                                    let responseBody = request.responseText;
+                                    history.replaceState(null, "", "/admin/assistant");
+                                    document.open();
+                                    document.write(responseBody);
+                                    document.close();
+                                    // The back button appears to go back 2 times since the error page is not really a
+                                    // new page
+                                }
+                            }
+                        });
+                    });
+
+                    document.getElementById("add-remove-remaining-btn").addEventListener("click", (e) => {
+                        e.preventDefault();
+                        let changesList = [];
+                        let delta = document.getElementById("add-remove-remaining-value").value;
+                        for(let user of this.currentSettings) {
+                            changesList.push({
+                                "userId": user["userId"],
+                                "assistantType": user["assistantType"],
+                                "remainingQuestionsDelta": delta
+                            });
+                        }
+                        let body = {
+                            "action": "usersSettingsUpdate",
+                            "usersSettings": changesList
+                        };
+                        body = JSON.stringify(body);
+                        makePostRequest("/admin/assistant", "application/json;charset=UTF-8", body, (request) => {
+                            if(request.readyState === XMLHttpRequest.DONE) {
+                                if(request.status === 200) {
+                                    let responseBody = request.responseText;
+                                    let bodyType = request.getResponseHeader("Content-Type");
+                                    if(bodyType === "application/json;charset=UTF-8") {
+                                        responseBody = JSON.parse(responseBody);
+                                        window.location.replace(responseBody.redirect);
+                                    }
+                                    else {
+                                        history.replaceState(null, "", request.responseURL);
+                                        document.open();
+                                        document.write(responseBody);
+                                        document.close();
+                                        // The browser back button appears to go back 2 times since the displayed html
+                                        // is not in a real new page
+                                    }
+                                }
+                                else {
+                                    let responseBody = request.responseText;
+                                    history.replaceState(null, "", "/admin/assistant");
+                                    document.open();
+                                    document.write(responseBody);
+                                    document.close();
+                                    // The back button appears to go back 2 times since the error page is not really a
+                                    // new page
+                                }
+                            }
+                        });
                     });
 
                     document.getElementById("prompt-save-btn").addEventListener("click", (e) => {
@@ -383,18 +491,6 @@
                                     responseBody = JSON.parse(responseBody);
                                     this.currentSettings = responseBody.usersSettings;
                                     this.updateUsersSettingsList(this.currentSettings);
-                                    new DataTable('#users-settings-table', {
-                                        searching: true,
-                                        order: [[1, "asc"]],
-                                        "columnDefs": [{
-                                            "targets": 4,
-                                            "orderable": false
-                                        }],
-                                        scrollY: '679px',
-                                        scrollCollapse: true,
-                                        paging: false,
-                                        language: {info: 'Showing _TOTAL_ entries'}
-                                    });
                                     this.updateQuestionsAmountTable(responseBody.questionsPerDay);
                                     this.updateTotalQuestionsAmount(responseBody.totalQuestions);
                                     this.updatePromptText(responseBody.prompt);
@@ -435,12 +531,15 @@
                             row.appendChild(column);
                         }
                         let column = document.createElement("td");
+                        let input = document.createElement("input");
+                        input.type = "number";
+                        input.value = user["remainingQuestions"];
+                        input.classList.add("form-control");
+                        column.append(input);
+                        row.append(column);
+                        column = document.createElement("td");
                         let select = document.createElement("select");
                         select.classList.add("form-select");
-                        select.addEventListener("change", (e) => {
-                            let id = user["userId"];
-                            this.changesMap[id] = e.target.value;
-                        });
                         for(let type of assistantTypes) {
                             let option = document.createElement("option");
                             option.value = type.toUpperCase().replace(" ", "_");
@@ -452,8 +551,109 @@
                         }
                         column.appendChild(select)
                         row.appendChild(column);
+                        column = document.createElement("td");
+                        let button = document.createElement("button");
+                        button.disabled = true;
+                        button.classList.add("btn", "btn-primary");
+                        let i = document.createElement("i");
+                        i.classList.add("fa", "fa-check");
+                        i.ariaHidden = "true";
+                        button.appendChild(i);
+                        button.addEventListener("click", (e) => {
+                            let row = e.target.closest("tr");
+                            let assistantType = row.getElementsByTagName("select")[0].value.toUpperCase();
+                            let remainingQuestions = row.getElementsByTagName("input")[0].value;
+                            let body = {
+                                "action": "usersSettingsUpdate",
+                                "usersSettings": [
+                                    {
+                                        "userId": user["userId"],
+                                        "assistantType": assistantType,
+                                        "remainingQuestionsDelta": remainingQuestions - user["remainingQuestions"]
+                                    }
+                                ]
+                            };
+                            body = JSON.stringify(body);
+                            makePostRequest("/admin/assistant", "application/json;charset=UTF-8", body, (request) => {
+                                if(request.readyState === XMLHttpRequest.DONE) {
+                                    if(request.status === 200) {
+                                        let responseBody = request.responseText;
+                                        let bodyType = request.getResponseHeader("Content-Type");
+                                        if(bodyType === "application/json;charset=UTF-8") {
+                                            responseBody = JSON.parse(responseBody);
+                                            window.location.replace(responseBody.redirect);
+                                        }
+                                        else {
+                                            history.replaceState(null, "", request.responseURL);
+                                            document.open();
+                                            document.write(responseBody);
+                                            document.close();
+                                            // The browser back button appears to go back 2 times since the displayed html
+                                            // is not in a real new page
+                                        }
+                                    }
+                                    else {
+                                        let responseBody = request.responseText;
+                                        history.replaceState(null, "", "/admin/assistant");
+                                        document.open();
+                                        document.write(responseBody);
+                                        document.close();
+                                        // The back button appears to go back 2 times since the error page is not really a
+                                        // new page
+                                    }
+                                }
+                            });
+                        });
+                        column.appendChild(button);
+                        row.appendChild(column);
+                        row.addEventListener("change", (e) => {
+                            let button = e.currentTarget.getElementsByTagName("button")[0];
+                            button.disabled = false;
+                        });
                         tableBody.appendChild(row);
                     }
+
+                    // https://datatables.net/examples/plug-ins/dom_sort.html
+                    // Create an array with the values of all the input boxes in a column, parsed as numbers
+                    DataTable.ext.order['dom-text-numeric'] = function (settings, col) {
+                        return this.api()
+                                .column(col, { order: 'index' })
+                                .nodes()
+                                .map(function (td, i) {
+                                    let el = td.querySelector('input');
+                                    return el ? el.value * 1 : 0;
+                                });
+                    };
+
+                    // Create an array with the values of all the select options in a column
+                    DataTable.ext.order['dom-select'] = function (settings, col) {
+                        return this.api()
+                                .column(col, { order: 'index' })
+                                .nodes()
+                                .map(function (td, i) {
+                                    let el = td.querySelector('select');
+                                    return el ? el.value : 0;
+                                });
+                    };
+
+                    new DataTable('#users-settings-table', {
+                        searching: true,
+                        order: [[1, "asc"]],
+                        "columnDefs": [{
+                            "targets": 4,
+                            "orderDataType": "dom-text-numeric"
+                        }, {
+                            "targets": 5,
+                            "orderDataType": "dom-select"
+                        }, {
+                            "targets": 6,
+                            "orderable": false
+                        }],
+                        scrollY: '679px',
+                        scrollCollapse: true,
+                        paging: false,
+                        language: {info: 'Showing _TOTAL_ entries'}
+                    });
                 }
 
                 this.updateQuestionsAmountTable = function(questionsPerDay) {

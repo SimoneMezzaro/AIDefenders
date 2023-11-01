@@ -58,3 +58,8 @@
 #assistant-status.disabled {
     color: red;
 }
+
+#add-remove-remaining-btn {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}

@@ -67,7 +67,7 @@
 
         this.getQuestionsList = function() {
             let gameId = document.getElementById("assistant-game-id").value;
-            let params = "gameId=" + gameId;
+            let params = "gameId=" + gameId + "&action=previousQuestions";
             makeGetRequest("/assistant", params, (request) => {
                 if(request.readyState === XMLHttpRequest.DONE) {
                     if(request.status === 200) {

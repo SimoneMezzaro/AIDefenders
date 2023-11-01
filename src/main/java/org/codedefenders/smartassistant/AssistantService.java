@@ -16,6 +16,7 @@ import org.codedefenders.persistence.database.AssistantUserSettingsRepository;
 import org.codedefenders.smartassistant.GPTObjects.GPTMessage;
 import org.codedefenders.smartassistant.GPTObjects.GPTRole;
 import org.codedefenders.smartassistant.exceptions.GPTException;
+import org.codedefenders.transaction.Transactional;
 
 public class AssistantService {
     @Inject
@@ -81,14 +82,53 @@ public class AssistantService {
         return entity.get().getAssistantType() != SmartAssistantType.NONE;
     }
 
+    public int getRemainingQuestionsForUser(int userId) {
+        Optional<AssistantUserSettingsEntity> entity = assistantUserSettingsRepository.getAssistantUserSettingsByUserId(userId);
+        if(entity.isEmpty()) {
+            //TODO: handle error
+            return 0;
+        }
+        return entity.get().getRemainingQuestions();
+    }
+
+    @Transactional
+    public boolean checkAndDecrementRemainingQuestions(int userId) {
+        Optional<AssistantUserSettingsEntity> entity = assistantUserSettingsRepository.getAssistantUserSettingsByUserId(userId);
+        if(entity.isEmpty()) {
+            //TODO: handle error
+            return false;
+        }
+        AssistantUserSettingsEntity settings = entity.get();
+        if(settings.getRemainingQuestions() > 0) {
+            settings.setRemainingQuestionsDelta(-1);
+            assistantUserSettingsRepository.updateAssistantUserSettings(settings);
+            return true;
+        }
+        return false;
+    }
+
+    @Transactional
+    public void incrementRemainingQuestions(int userId) {
+        Optional<AssistantUserSettingsEntity> entity = assistantUserSettingsRepository.getAssistantUserSettingsByUserId(userId);
+        if(entity.isEmpty()) {
+            //TODO: handle error
+            return;
+        }
+        AssistantUserSettingsEntity settings = entity.get();
+        settings.setRemainingQuestionsDelta(1);
+        assistantUserSettingsRepository.updateAssistantUserSettings(settings);
+    }
+
     // ______ADMIN______
 
     public List<AssistantUserSettingsEntity> getAllAssistantUserSettings() {
         return assistantUserSettingsRepository.getAllAssistantUserSettings();
     }
 
-    public void updateAssistantUserSettings(Map<Integer, SmartAssistantType> assistantTypes) {
-        assistantTypes.forEach((id, type) -> assistantUserSettingsRepository.updateAssistantUserSettings(id, type));
+    public void updateAssistantUserSettings(List<AssistantUserSettingsEntity> usersSettings) {
+        for(AssistantUserSettingsEntity userSettings : usersSettings) {
+            assistantUserSettingsRepository.updateAssistantUserSettings(userSettings);
+        }
     }
 
     public Map<LocalDate, Integer> getAmountOfQuestionsInTheLastDays(int daysBack) {

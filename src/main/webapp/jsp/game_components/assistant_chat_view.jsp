@@ -10,6 +10,9 @@
 <div>
     <div class="game-component-header">
         <h3>Smart Assistant</h3>
+        <div class="px-1">
+            Remaining Questions: <b id="remaining-questions"></b>
+        </div>
     </div>
     <div id="new-question">
         <form>
@@ -54,6 +57,15 @@
 </div>
 
 <script>
+    async function makeGetRequest(url, params, callBack) {
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = () => {
+            callBack(request);
+        }
+        request.open("GET", url + "?" + params);
+        request.send();
+    }
+
     async function makePostRequest(url, contentType, body, callBack) {
         var request = new XMLHttpRequest();
         request.onreadystatechange = () => {
@@ -76,6 +88,7 @@
     var yesButton = document.getElementById("yes-btn");
     var noButton = document.getElementById("no-btn");
 
+    currentQuestionManager.getRemainingQuestions();
     currentQuestionManager.registerEvents();
 
     function CurrentQuestionManager() {
@@ -219,7 +232,47 @@
             });
         }
 
+        this.getRemainingQuestions = function() {
+            let gameId = document.getElementById("assistant-game-id").value;
+            let params = "gameId=" + gameId + "&action=remainingQuestions";
+            makeGetRequest("/assistant", params, (request) => {
+                if(request.readyState === XMLHttpRequest.DONE) {
+                    if(request.status === 200) {
+                        let responseBody = request.responseText;
+                        let bodyType = request.getResponseHeader("Content-Type");
+                        if(bodyType === "application/json;charset=UTF-8") {
+                            responseBody = JSON.parse(responseBody);
+                            if(responseBody.redirect === undefined) {
+                                document.getElementById("remaining-questions").textContent = responseBody.remainingQuestions;
+                            }
+                            else {
+                                window.location.replace(responseBody.redirect);
+                            }
+                        }
+                        else {
+                            history.replaceState(null, "", request.responseURL);
+                            document.open();
+                            document.write(responseBody);
+                            document.close();
+                            // The browser back button appears to go back 2 times since the displayed html
+                            // is not in a real new page
+                        }
+                    }
+                    else {
+                        let responseBody = request.responseText;
+                        history.replaceState(null, "", "/assistant");
+                        document.open();
+                        document.write(responseBody);
+                        document.close();
+                        // The back button appears to go back 2 times since the error page is not really a
+                        // new page
+                    }
+                }
+            });
+        }
+
         this.displayAnswer = function(question, answer) {
+            this.getRemainingQuestions();
             document.getElementById("last-question-text").textContent = question;
             let answerBox = document.getElementById("last-answer-box");
             answerBox.replaceChildren();
@@ -268,6 +321,7 @@
         }
 
         this.newQuestion = function() {
+            this.getRemainingQuestions();
             currentQuestionBox.value = "";
             submitButton.disabled = true;
             submitError.hidden = true;
