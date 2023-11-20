@@ -6,6 +6,7 @@
 %>
 
 <link href="${url.forPath("/css/specific/smart_assistant.css")}" rel="stylesheet">
+<link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 
 <div>
     <div class="game-component-header">
@@ -56,7 +57,9 @@
     </div>
 </div>
 
-<script>
+<script type="module">
+    import {AutocompleteArea} from '${url.forPath("/js/codedefenders_main.mjs")}';
+
     async function makeGetRequest(url, params, callBack) {
         var request = new XMLHttpRequest();
         request.onreadystatechange = () => {
@@ -88,10 +91,14 @@
     var yesButton = document.getElementById("yes-btn");
     var noButton = document.getElementById("no-btn");
 
+    currentQuestionManager.getAvailableTags();
     currentQuestionManager.getRemainingQuestions();
     currentQuestionManager.registerEvents();
 
     function CurrentQuestionManager() {
+
+        this.availableTags = [];
+
         this.registerEvents = function() {
             currentQuestionBox.addEventListener("input", () => {
                 let question = currentQuestionBox.value.trim();
@@ -230,6 +237,19 @@
             newButton.addEventListener("click", () => {
                 this.newQuestion();
             });
+
+            new AutocompleteArea("#current-question", this.availableTags);
+        }
+
+        this.getAvailableTags = function() {
+            let mutants = new Map(JSON.parse('${mutantAccordion.jsonMutants()}'));
+            let tests = new Map(JSON.parse('${testAccordion.testsAsJSON}'));
+            for(let k of tests.keys()) {
+                this.availableTags.push("@test" + k);
+            }
+            for(let k of mutants.keys()) {
+                this.availableTags.push("@mutant" + k);
+            }
         }
 
         this.getRemainingQuestions = function() {

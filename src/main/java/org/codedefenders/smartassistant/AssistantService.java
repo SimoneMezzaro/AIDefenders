@@ -6,6 +6,8 @@ import java.util.*;
 import javax.inject.Inject;
 
 import org.codedefenders.game.AbstractGame;
+import org.codedefenders.game.Mutant;
+import org.codedefenders.game.Test;
 import org.codedefenders.model.AssistantPromptEntity;
 import org.codedefenders.model.AssistantQuestionEntity;
 import org.codedefenders.model.AssistantUserSettingsEntity;
@@ -32,7 +34,8 @@ public class AssistantService {
 
     // ______USER______
 
-    public AssistantQuestionEntity sendQuestion(AssistantQuestionEntity question, AbstractGame game) throws GPTException {
+    public AssistantQuestionEntity sendQuestion(AssistantQuestionEntity question, AbstractGame game,
+                                                Map<Mutant, Boolean> mutants, List<Test> tests) throws GPTException {
         AssistantPromptEntity prompt = assistantPromptService.getLastPrompt();
         question.setPromptId(prompt.getID());
         Optional<Integer> questionId = assistantQuestionRepository.storeQuestion(question);
@@ -44,12 +47,12 @@ public class AssistantService {
         String answer;
         if(prompt.getAsSeparateContext()) {
             List<GPTMessage> messages = new ArrayList<>();
-            messages.add(new GPTMessage(GPTRole.SYSTEM, assistantPromptService.buildPromptText(prompt, game)));
+            messages.add(new GPTMessage(GPTRole.SYSTEM, assistantPromptService.buildPromptText(prompt, game, mutants, tests)));
             messages.add(new GPTMessage(GPTRole.USER, question.getQuestion()));
             answer = dispatcher.sendChatCompletionRequestWithContext(messages).getFirstChoiceMessageContent();
         } else {
             GPTMessage message = new GPTMessage(GPTRole.USER,
-                    assistantPromptService.buildPromptTextWithQuestion(prompt, question.getQuestion(), game));
+                    assistantPromptService.buildPromptTextWithQuestion(prompt, question.getQuestion(), game, mutants, tests));
             answer = dispatcher.sendChatCompletionRequest(message).getFirstChoiceMessageContent();
         }
         question.setAnswer(answer);

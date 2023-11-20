@@ -8,6 +8,7 @@ import ProgressBar from './progress_bar_common';
 import PushSocket from './push_socket';
 import PuzzleAPI from './puzzle_api';
 import AchievementNotifications from './achievement_notifications';
+import AutocompleteArea from "./autocomplete_area";
 
 
 export {
@@ -20,7 +21,8 @@ export {
     ProgressBar,
     PushSocket,
     PuzzleAPI,
-    AchievementNotifications
+    AchievementNotifications,
+    AutocompleteArea
 }
 
 export * from './utils';

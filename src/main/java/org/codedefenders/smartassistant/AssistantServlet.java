@@ -1,9 +1,12 @@
 package org.codedefenders.smartassistant;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
@@ -16,11 +19,12 @@ import org.codedefenders.auth.CodeDefendersAuth;
 import org.codedefenders.beans.message.MessagesBean;
 import org.codedefenders.database.GameDAO;
 import org.codedefenders.database.PlayerDAO;
-import org.codedefenders.game.AbstractGame;
-import org.codedefenders.game.GameMode;
-import org.codedefenders.game.GameState;
+import org.codedefenders.game.*;
 import org.codedefenders.game.multiplayer.MeleeGame;
 import org.codedefenders.model.AssistantQuestionEntity;
+import org.codedefenders.service.game.AbstractGameService;
+import org.codedefenders.service.game.MeleeGameService;
+import org.codedefenders.service.game.MultiplayerGameService;
 import org.codedefenders.servlets.games.GameProducer;
 import org.codedefenders.smartassistant.exceptions.GPTException;
 import org.codedefenders.util.Paths;
@@ -34,6 +38,10 @@ import com.google.gson.Gson;
 public class AssistantServlet extends HttpServlet {
     @Inject
     private AssistantService assistantService;
+    @Inject
+    private MultiplayerGameService multiplayerGameService;
+    @Inject
+    private MeleeGameService meleeGameService;
     @Inject
     private GameProducer gameProducer;
     @Inject
@@ -121,7 +129,63 @@ public class AssistantServlet extends HttpServlet {
             sendRedirectWithMessage(response, "Your question is too long. Use at most 1500 words", redirectUrl);
             return;
         }
+
         int userId = login.getUserId();
+        AbstractGameService abstractGameService;
+        if(game.getMode() == GameMode.MELEE) {
+            abstractGameService = meleeGameService;
+        } else {
+            abstractGameService = multiplayerGameService;
+        }
+
+        Map<Mutant, Boolean> mutantsMap = new HashMap<>();
+        Pattern pattern = Pattern.compile("@mutant[0-9]*", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(questionText);
+        while(matcher.find()) {
+            String mutantString = matcher.group();
+            try {
+                int mutantId = Integer.parseInt(mutantString.substring("@mutant".length()));
+                Mutant mutant = game.getMutantByID(mutantId);
+                if(mutant != null) {
+                    mutantsMap.put(mutant, abstractGameService.getMutant(userId, mutant).isCanView());
+                } else {
+                    sendRedirectWithMessage(response, mutantString + " does not exist in the current game", redirectUrl);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                sendRedirectWithMessage(response, mutantString + " does not exist in the current game", redirectUrl);
+                return;
+            }
+        }
+
+        List<Test> allTests = game.getTests();
+        List<Test> testsList = new ArrayList<>();
+        pattern = Pattern.compile("@test[0-9]*", Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(questionText);
+        while(matcher.find()) {
+            String testString = matcher.group();
+            try {
+                int testId = Integer.parseInt(testString.substring("@test".length()));
+                Test test = null;
+                for(Test t : allTests) {
+                    if(t.getId() == testId) {
+                        test = t;
+                    }
+                }
+                if(test != null && abstractGameService.getTest(userId, test).isCanView()) {
+                    testsList.add(test);
+                } else {
+                    sendRedirectWithMessage(response, testString + " does not exist in the current game or is not visible",
+                            redirectUrl);
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                sendRedirectWithMessage(response, testString + " does not exist in the current game or is not visible",
+                        redirectUrl);
+                return;
+            }
+        }
+
         if(!assistantService.checkAndDecrementRemainingQuestions(userId)) {
             sendRedirectWithMessage(response, "Question refused. You have reached your questions quota!", redirectUrl);
             return;
@@ -129,7 +193,7 @@ public class AssistantServlet extends HttpServlet {
         int playerId = PlayerDAO.getPlayerIdForUserAndGame(userId, game.getId());
         AssistantQuestionEntity question = new AssistantQuestionEntity(questionText, playerId);
         try {
-            question = assistantService.sendQuestion(question, game);
+            question = assistantService.sendQuestion(question, game, mutantsMap, testsList);
         } catch (GPTException e) {
             assistantService.incrementRemainingQuestions(userId);
             sendRedirectWithMessage(response, "The smart assistant encountered an error!\n" +

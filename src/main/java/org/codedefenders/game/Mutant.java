@@ -386,6 +386,9 @@ public class Mutant implements Serializable {
         return StringEscapeUtils.escapeHtml4(getKillMessage());
     }
 
+    public String getAsString() {
+        return FileUtils.readJavaFileWithDefault(Paths.get(javaFile));
+    }
 
     public boolean insert() {
         try {
