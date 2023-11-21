@@ -1,5 +1,10 @@
-package org.codedefenders.model;
+package org.codedefenders.assistant.entities;
 
+/**
+ * This class represents a question entity in the database. A question entity stores a question sent by a player, its
+ * answer, the id of the {@link AssistantPromptEntity} used with the question, the id of the player asking and whether
+ * the player found the answer useful.
+ */
 public class AssistantQuestionEntity {
 
     private transient Integer id;

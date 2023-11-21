@@ -1,4 +1,4 @@
-package org.codedefenders.smartassistant;
+package org.codedefenders.assistant.servlets;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,18 +15,19 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.codedefenders.assistant.services.AssistantService;
 import org.codedefenders.auth.CodeDefendersAuth;
 import org.codedefenders.beans.message.MessagesBean;
 import org.codedefenders.database.GameDAO;
 import org.codedefenders.database.PlayerDAO;
 import org.codedefenders.game.*;
 import org.codedefenders.game.multiplayer.MeleeGame;
-import org.codedefenders.model.AssistantQuestionEntity;
+import org.codedefenders.assistant.entities.AssistantQuestionEntity;
 import org.codedefenders.service.game.AbstractGameService;
 import org.codedefenders.service.game.MeleeGameService;
 import org.codedefenders.service.game.MultiplayerGameService;
 import org.codedefenders.servlets.games.GameProducer;
-import org.codedefenders.smartassistant.exceptions.GPTException;
+import org.codedefenders.assistant.exceptions.GPTException;
 import org.codedefenders.util.Paths;
 import org.codedefenders.util.URLUtils;
 import org.slf4j.Logger;
@@ -34,6 +35,22 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 
+/**
+ * This {@link HttpServlet} handles all user requests related to the GPT smart assistant.
+ * <p>
+ * Multiple types of {@code GET} requests are handled by {@link AssistantServlet}. The {@code GET} request type is
+ * specified in the URL parameter {@code action}. Available types are:
+ * <p>- {@code previousQuestions}: retrieves all the questions asked by the user in the current game
+ * <p>- {@code remainingQuestions}: retrieves the number of questions that the user is still able to ask
+ * <p>
+ * Multiple types of {@code POST} requests are handled by {@link AssistantServlet}. These {@code POST} requests expect
+ * the body {@code Content-type} to be {@code application/x-www-form-urlencoded}. The {@code POST} request type is
+ * specified in the body parameter {@code action}. Available types are:
+ * <p>- {@code question}: submits a new question for the assistant
+ * <p>- {@code feedback}: submits a feedback for the last submitted question
+ * <p>
+ * All the responses sent by {@link AssistantServlet} are in JSON format, including most of the redirects.
+ */
 @WebServlet(Paths.SMART_ASSISTANT)
 public class AssistantServlet extends HttpServlet {
     @Inject
@@ -72,7 +89,7 @@ public class AssistantServlet extends HttpServlet {
             sendRedirectWithMessage(response, "Unable to get previous questions", redirectUrl);
             return;
         }
-        switch (action) {
+        switch(action) {
             case "previousQuestions" -> {
                 List<AssistantQuestionEntity> questionsList = assistantService.getQuestionsByPlayer(playerId);
                 sendJson(response, questionsList);
@@ -106,9 +123,9 @@ public class AssistantServlet extends HttpServlet {
             sendRedirectWithMessage(response, "Operation failed due to malformed request", redirectUrl);
             return;
         }
-        switch (action) {
+        switch(action) {
             case "question" -> postQuestion(request, response, redirectUrl, game);
-            case "feedback" -> postFeedback(request, game);
+            case "feedback" -> postFeedback(request, response, redirectUrl, game);
             default -> {
                 logger.info("Failed to process post request because the request was malformed");
                 sendRedirectWithMessage(response, "Operation failed due to malformed request", redirectUrl);
@@ -116,6 +133,15 @@ public class AssistantServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Submits a new question to GPT and writes the answer in the response body. This method also checks that the
+     * question has the correct length and does not contain invalid mutants or tests tags.
+     * @param request the {@link HttpServletRequest} containing the new question
+     * @param response the {@link HttpServletResponse} which will contain the answer
+     * @param redirectUrl the URL of the game page where the user is redirected if the question is not valid
+     * @param game the game where the question was sent
+     * @throws IOException when the writing of the body fails
+     */
     private void postQuestion(HttpServletRequest request, HttpServletResponse response, String redirectUrl, AbstractGame game)
             throws IOException {
         Map<String, String> responseBody = new HashMap<>();
@@ -129,7 +155,6 @@ public class AssistantServlet extends HttpServlet {
             sendRedirectWithMessage(response, "Your question is too long. Use at most 1500 words", redirectUrl);
             return;
         }
-
         int userId = login.getUserId();
         AbstractGameService abstractGameService;
         if(game.getMode() == GameMode.MELEE) {
@@ -138,6 +163,7 @@ public class AssistantServlet extends HttpServlet {
             abstractGameService = multiplayerGameService;
         }
 
+        // retrieves all the mutants tagged in the question
         Map<Mutant, Boolean> mutantsMap = new HashMap<>();
         Pattern pattern = Pattern.compile("@mutant[0-9]*", Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(questionText);
@@ -152,12 +178,13 @@ public class AssistantServlet extends HttpServlet {
                     sendRedirectWithMessage(response, mutantString + " does not exist in the current game", redirectUrl);
                     return;
                 }
-            } catch (NumberFormatException e) {
+            } catch(NumberFormatException e) {
                 sendRedirectWithMessage(response, mutantString + " does not exist in the current game", redirectUrl);
                 return;
             }
         }
 
+        // retrieves all the tests tagged in the question
         List<Test> allTests = game.getTests();
         List<Test> testsList = new ArrayList<>();
         pattern = Pattern.compile("@test[0-9]*", Pattern.CASE_INSENSITIVE);
@@ -179,7 +206,7 @@ public class AssistantServlet extends HttpServlet {
                             redirectUrl);
                     return;
                 }
-            } catch (NumberFormatException e) {
+            } catch(NumberFormatException e) {
                 sendRedirectWithMessage(response, testString + " does not exist in the current game or is not visible",
                         redirectUrl);
                 return;
@@ -194,7 +221,7 @@ public class AssistantServlet extends HttpServlet {
         AssistantQuestionEntity question = new AssistantQuestionEntity(questionText, playerId);
         try {
             question = assistantService.sendQuestion(question, game, mutantsMap, testsList);
-        } catch (GPTException e) {
+        } catch(GPTException e) {
             assistantService.incrementRemainingQuestions(userId);
             sendRedirectWithMessage(response, "The smart assistant encountered an error!\n" +
                     "Please try again and contact your administrator if this keeps happening", redirectUrl);
@@ -205,12 +232,35 @@ public class AssistantServlet extends HttpServlet {
         sendJson(response, responseBody);
     }
 
-    private void postFeedback(HttpServletRequest request, AbstractGame game) {
+    /**
+     * Updates the feedback of the last question sent by the user in the given game
+     * @param request the {@link HttpServletRequest} containing the feedback attribute
+     * @param response the {@link HttpServletResponse}
+     * @param redirectUrl the URL of the game page where the user is redirected if the post request is not valid
+     * @param game the game where the question was sent
+     * @throws IOException when the writing of the body fails
+     */
+    private void postFeedback(HttpServletRequest request, HttpServletResponse response, String redirectUrl, AbstractGame game)
+            throws IOException {
         boolean feedback = Boolean.parseBoolean(request.getParameter("feedback"));
         int playerId = PlayerDAO.getPlayerIdForUserAndGame(login.getUserId(), game.getId());
-        assistantService.updateQuestionFeedback(playerId, feedback);
+        if(!assistantService.updateQuestionFeedback(playerId, feedback)) {
+            logger.info("Invalid feedback update by player " + playerId + ". No question was found for this player.");
+            sendRedirectWithMessage(response, "You can't submit a question feedback because you have not sent any " +
+                    "question yet", redirectUrl);
+        }
     }
 
+    /**
+     * Performs several checks related to the game and returns the URL of the game page if all the checks are successful.
+     * In particular this method checks that the game exists, that it is neither finished nor expired and that the user
+     * is part of the game. If one of the checks fails, then an appropriate redirect is written in the response body.
+     * @param request the {@link HttpServletRequest}
+     * @param response the {@link HttpServletResponse}
+     * @param game the game on which the checks must be performed
+     * @return the game page URL of the given game if all the checks are successful; {@code null} otherwise
+     * @throws IOException when the writing of the body fails
+     */
     private String computeRedirectUrlIfGameIsValid(HttpServletRequest request, HttpServletResponse response, AbstractGame game)
             throws IOException {
         Map<String, String> responseBody = new HashMap<>();
@@ -269,6 +319,14 @@ public class AssistantServlet extends HttpServlet {
         return redirectUrl;
     }
 
+    /**
+     * Writes a response containing the given redirect URL in its JSON body and adds a given message to the
+     * {@link MessagesBean}.
+     * @param response the {@link HttpServletResponse}
+     * @param message the message to be added to the {@link MessagesBean}
+     * @param redirectUrl the URL where the client should be redirected
+     * @throws IOException when the writing of the body fails
+     */
     private void sendRedirectWithMessage(HttpServletResponse response, String message, String redirectUrl)
             throws IOException {
         Map<String, String> responseBody = new HashMap<>();
@@ -277,6 +335,12 @@ public class AssistantServlet extends HttpServlet {
         sendJson(response, responseBody);
     }
 
+    /**
+     * Writes a given object in the response body in JSON format.
+     * @param response the {@link HttpServletResponse}
+     * @param responseBody the object to be written in the response body
+     * @throws IOException when the writing of the body fails
+     */
     private void sendJson(HttpServletResponse response, Object responseBody) throws IOException {
         String json = new Gson().toJson(responseBody);
         response.setContentType("application/json");

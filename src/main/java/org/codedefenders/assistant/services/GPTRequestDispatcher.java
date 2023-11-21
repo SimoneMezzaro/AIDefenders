@@ -1,4 +1,4 @@
-package org.codedefenders.smartassistant;
+package org.codedefenders.assistant.services;
 
 import java.io.IOException;
 import java.net.*;
@@ -11,16 +11,21 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.codedefenders.configuration.Configuration;
-import org.codedefenders.smartassistant.GPTObjects.GPTCompletion;
-import org.codedefenders.smartassistant.GPTObjects.GPTMessage;
-import org.codedefenders.smartassistant.GPTObjects.GPTRequest;
-import org.codedefenders.smartassistant.exceptions.GPTException;
+import org.codedefenders.assistant.GPTObjects.GPTCompletion;
+import org.codedefenders.assistant.GPTObjects.GPTMessage;
+import org.codedefenders.assistant.GPTObjects.GPTRequest;
+import org.codedefenders.assistant.exceptions.GPTException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+/**
+ * This class provides utility methods to send GPT requests to OpenAI API. In order to be able to send API request the
+ * {@link GPTRequestDispatcher} requires an OpenAI API key and a GPT model to be specified in a {@link Configuration}
+ * object.
+ */
 public class GPTRequestDispatcher {
     private final String openaiAPIKey;
     private final String model;
@@ -34,12 +39,20 @@ public class GPTRequestDispatcher {
         temperature = 0.0;
     }
 
+    /**
+     * Sends a chat completion request containing a list of messages to GPT API.
+     * @param messages the list of messages to be included in the request
+     * @return a chat completion object representing the body of the response from GPT
+     * @throws GPTException if an error occurs while sending the request. This exception may be thrown if API key or GPT
+     * model are missing, if the list of messages is badly formatted, if the {@link GPTRequestDispatcher} is unable to
+     * contact OpenAI API or receives an error in the response
+     */
     public GPTCompletion sendChatCompletionRequestWithContext(List<GPTMessage> messages) throws GPTException {
-        if(openaiAPIKey == null || openaiAPIKey.equals("")) {
+        if(openaiAPIKey == null || openaiAPIKey.isEmpty()) {
             logger.warn("OpenAI API key is missing in configuration file");
             throw new GPTException();
         }
-        if(model == null || model.equals("")) {
+        if(model == null || model.isEmpty()) {
             logger.warn("ChatGPT model is missing in configuration file");
             throw new GPTException();
         }
@@ -64,16 +77,24 @@ public class GPTRequestDispatcher {
                 throw new GPTException();
             }
             completion = gson.fromJson(response.body(), GPTCompletion.class);
-        } catch (URISyntaxException | IOException | InterruptedException e) {
+        } catch(URISyntaxException | IOException | InterruptedException e) {
             logger.warn("Sending of request to ChatGPT failed");
             throw new GPTException();
-        } catch (JsonSyntaxException e) {
+        } catch(JsonSyntaxException e) {
             logger.warn("Gson failed to convert ChatGPT response into a valid Java object");
             throw new GPTException();
         }
         return completion;
     }
 
+    /**
+     * Sends a chat completion request containing a message to GPT API.
+     * @param message the message to be included in the request
+     * @return a chat completion object representing the body of the response from GPT
+     * @throws GPTException if an error occurs while sending the request. This exception may be thrown if API key or GPT
+     * model are missing, if the message is badly formatted, if the {@link GPTRequestDispatcher} is unable to contact
+     * OpenAI API or receives an error in the response
+     */
     public GPTCompletion sendChatCompletionRequest(GPTMessage message) throws GPTException {
         List<GPTMessage> messages = new ArrayList<>();
         messages.add(message);

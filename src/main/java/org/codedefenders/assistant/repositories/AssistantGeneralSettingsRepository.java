@@ -1,4 +1,4 @@
-package org.codedefenders.persistence.database;
+package org.codedefenders.assistant.repositories;
 
 import java.sql.SQLException;
 import java.util.Optional;
@@ -14,6 +14,10 @@ import org.slf4j.LoggerFactory;
 
 import static org.codedefenders.persistence.database.util.ResultSetUtils.nextFromRS;
 
+/**
+ * This repository provides methods for querying and updating the {@code assistant_general_settings} table in the
+ * database.
+ */
 @Transactional
 public class AssistantGeneralSettingsRepository {
 
@@ -25,6 +29,10 @@ public class AssistantGeneralSettingsRepository {
         this.queryRunner = queryRunner;
     }
 
+    /**
+     * Gets the value of the {@code ASSISTANT_ENABLED} setting.
+     * @return the value of the {@code ASSISTANT_ENABLED} setting
+     */
     public Optional<Boolean> getAssistantEnabled() {
         @Language("SQL") String query = "SELECT Value FROM assistant_general_settings WHERE Name = 'ASSISTANT_ENABLED';";
         try {
@@ -35,12 +43,16 @@ public class AssistantGeneralSettingsRepository {
         }
     }
 
+    /**
+     * Updates the value of the {@code ASSISTANT_ENABLED} setting.
+     * @param enabled the value to be assigned to the {@code ASSISTANT_ENABLED} setting
+     */
     public void updateAssistantEnabled(boolean enabled) {
         @Language("SQL") String query = "UPDATE assistant_general_settings SET Value = ? WHERE Name = 'ASSISTANT_ENABLED';";
         try {
             int updatedRows = queryRunner.update(query, enabled);
             if (updatedRows != 1) {
-                throw new UncheckedSQLException("Couldn't update assistant answer");
+                throw new UncheckedSQLException("Couldn't update ASSISTANT_ENABLED setting");
             }
         } catch (SQLException e) {
             logger.error("SQLException while executing query", e);

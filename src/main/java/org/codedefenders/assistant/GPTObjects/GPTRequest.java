@@ -1,7 +1,14 @@
-package org.codedefenders.smartassistant.GPTObjects;
+package org.codedefenders.assistant.GPTObjects;
 
 import java.util.List;
 
+/**
+ * This class represents the body of a chat completion request for the GPT API. Specifications about the request are
+ * available at
+ * <a href="https://platform.openai.com/docs/api-reference/chat/create">
+ *     https://platform.openai.com/docs/api-reference/chat/create
+ * </a>
+ */
 public class GPTRequest {
     private String model;
     private List<GPTMessage> messages;

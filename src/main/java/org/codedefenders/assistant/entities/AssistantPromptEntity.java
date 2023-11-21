@@ -1,12 +1,20 @@
-package org.codedefenders.model;
+package org.codedefenders.assistant.entities;
 
+/**
+ * This class represents a prompt entity in the database. A prompt is a template used to build a message to be sent to
+ * GPT together with the player question. The template allows to include addition information to the question such as
+ * the class under test or the code of some mutants and tests.
+ * <p>
+ * A prompt entity stores the text of the template, the timestamp of its creation, weather it will embed the question
+ * or send it in a separate message and weather it is a default prompt.
+ */
 public class AssistantPromptEntity {
 
     private transient Integer ID;
     private long timestamp;
-    private String prompt;
-    private Boolean asSeparateContext;
-    private Boolean defaultFlag;
+    private final String prompt;
+    private final Boolean asSeparateContext;
+    private final Boolean defaultFlag;
 
     public AssistantPromptEntity(String prompt, Boolean asSeparateContext, Boolean defaultFlag) {
         this.prompt = prompt;
