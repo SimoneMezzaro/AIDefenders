@@ -142,8 +142,49 @@
     <t:modal id="prompt-explanation" title="Prompt Explanation">
         <jsp:attribute name="content">
             <p>
-                EMPTY
+                The prompt is the template used by the assistant to send a question to GPT API. Every time a player
+                sends a question to the assistant, the question is embedded in the prompt and the resulting text is sent
+                for chat completion to the GPT API.
             </p>
+            <p>
+                The question can be added to the prompt in two ways:
+            </p>
+            <ul>
+                <li>
+                    if the prompt contains the placeholder <span class="prompt-placeholder">&lt;user_question&gt;</span>
+                    the question is substituted to the placeholder and the assistant sends a unique message containing
+                    the resulting text
+                </li>
+                <li>
+                    if the prompt does NOT contain the placeholder <span class="prompt-placeholder">&lt;user_question&gt;</span>
+                    then the assistant sends two separate messages to GPT: the first one contains the prompt text and
+                    the second one contains the question alone
+                </li>
+            </ul>
+            <p>
+                You can add other placeholders in the prompt to include additional information together with the questions.
+                Each of these placeholders is substituted by the appropriate information to build the resulting text sent
+                to the GPT API. The available placeholders are:
+            </p>
+            <ul>
+                <li>
+                    <span class="prompt-placeholder">&lt;class_under_test&gt;</span>: is substituted with the code under
+                    test of the game where the question has been made
+                </li>
+                <li>
+                    <span class="prompt-placeholder">&lt;mutants(<i>_message_</i>)&gt;</span>: is substituted with the list
+                    of mutants tagged in the question (if any). The list contains the code of each tagged mutant visible
+                    to the player making the question and contains the descriptions of the tagged mutants which are not
+                    visible to the player. This placeholder takes a parameter <i>_message_</i> which is a string to be
+                    inserted before the mutants list (if the list is not empty).
+                </li>
+                <li>
+                    <span class="prompt-placeholder">&lt;tests(<i>_message_</i>)&gt;</span>: is substituted with the list
+                    of tests tagged in the question (if any). The list contains the code of each tagged test. This
+                    placeholder takes a parameter <i>_message_</i> which is a string to be inserted before the tests list
+                    (if the list is not empty).
+                </li>
+            </ul>
         </jsp:attribute>
     </t:modal>
 

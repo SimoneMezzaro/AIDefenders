@@ -1,4 +1,5 @@
 
+<%@ taglib prefix="t" tagdir="/WEB-INF/tags" %>
 <%@ page import="org.codedefenders.game.AbstractGame" %>
 
 <%
@@ -10,7 +11,12 @@
 
 <div>
     <div class="game-component-header">
-        <h3>Smart Assistant</h3>
+        <div>
+            <h3>Smart Assistant</h3>
+            <a class="text-decoration-none text-reset cursor-pointer mb-2" data-bs-toggle="modal" data-bs-target="#assistant-explanation">
+                <i class="fa fa-question-circle ms-1"></i>
+            </a>
+        </div>
         <div class="px-1">
             Remaining Questions: <b id="remaining-questions"></b>
         </div>
@@ -56,6 +62,31 @@
         </div>
     </div>
 </div>
+
+<t:modal id="assistant-explanation" title="Smart Assistant Information">
+        <jsp:attribute name="content">
+            <p>
+                The Smart Assistant has been designed to help you to write tests and mutants during the game. You can ask
+                anything you want to the assistant!
+            </p>
+            <p>
+                The assistant is already aware of the class under test used in the game: you don't need to add the code
+                of the class in your questions.
+            </p>
+            <p>
+                You can also tag mutants and tests in you questions using <span class="mutant-tag">@mutantXYZ</span> or
+                <span class="test-tag">@testXYZ</span>, where <i>XYZ</i> is the id of the mutant or test. Notice that you
+                can tag only tests and mutants that are visible to you in the interface.
+            </p>
+            <p>
+                When you tag a mutant or a test, the code of the mutant or test will be automatically sent to the assistant:
+                you don't need to manually add such code in your question.
+            </p>
+            <p>
+                Autocomplete is available for tagging mutants and tests!
+            </p>
+        </jsp:attribute>
+</t:modal>
 
 <script type="module">
     import {AutocompleteArea} from '${url.forPath("/js/codedefenders_main.mjs")}';

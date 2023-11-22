@@ -47,6 +47,14 @@
     white-space: pre-wrap;
 }
 
+.mutant-tag {
+    color: var(--bg-attacker);
+}
+
+.test-tag {
+    color: var(--bg-defender);
+}
+
 #prompt-text {
     min-height: 300px;
 }
@@ -62,4 +70,8 @@
 #add-remove-remaining-btn {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+}
+
+.prompt-placeholder {
+    color: darkgreen;
 }
