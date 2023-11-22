@@ -5,19 +5,19 @@ import java.util.*;
 
 import javax.inject.Inject;
 
-import org.codedefenders.game.AbstractGame;
-import org.codedefenders.game.Mutant;
-import org.codedefenders.game.Test;
+import org.codedefenders.assistant.GPTObjects.GPTMessage;
+import org.codedefenders.assistant.GPTObjects.GPTRole;
 import org.codedefenders.assistant.entities.AssistantPromptEntity;
 import org.codedefenders.assistant.entities.AssistantQuestionEntity;
-import org.codedefenders.assistant.entities.AssistantUserSettingsEntity;
 import org.codedefenders.assistant.entities.AssistantType;
+import org.codedefenders.assistant.entities.AssistantUserSettingsEntity;
+import org.codedefenders.assistant.exceptions.GPTException;
 import org.codedefenders.assistant.repositories.AssistantGeneralSettingsRepository;
 import org.codedefenders.assistant.repositories.AssistantQuestionRepository;
 import org.codedefenders.assistant.repositories.AssistantUserSettingsRepository;
-import org.codedefenders.assistant.GPTObjects.GPTMessage;
-import org.codedefenders.assistant.GPTObjects.GPTRole;
-import org.codedefenders.assistant.exceptions.GPTException;
+import org.codedefenders.game.AbstractGame;
+import org.codedefenders.game.Mutant;
+import org.codedefenders.game.Test;
 import org.codedefenders.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

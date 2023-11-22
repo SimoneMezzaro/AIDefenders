@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.text.StringEscapeUtils;
+import org.codedefenders.assistant.services.AssistantService;
 import org.codedefenders.auth.CodeDefendersAuth;
 import org.codedefenders.beans.game.PreviousSubmissionBean;
 import org.codedefenders.beans.message.MessagesBean;
@@ -76,7 +77,6 @@ import org.codedefenders.servlets.games.GameManagingUtils;
 import org.codedefenders.servlets.games.GameProducer;
 import org.codedefenders.servlets.util.Redirect;
 import org.codedefenders.servlets.util.ServletUtils;
-import org.codedefenders.assistant.services.AssistantService;
 import org.codedefenders.util.Constants;
 import org.codedefenders.util.Paths;
 import org.codedefenders.util.URLUtils;

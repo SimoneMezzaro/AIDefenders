@@ -9,11 +9,11 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import org.codedefenders.assistant.entities.AssistantPromptEntity;
+import org.codedefenders.assistant.repositories.AssistantPromptRepository;
 import org.codedefenders.game.AbstractGame;
 import org.codedefenders.game.Mutant;
 import org.codedefenders.game.Test;
-import org.codedefenders.assistant.entities.AssistantPromptEntity;
-import org.codedefenders.assistant.repositories.AssistantPromptRepository;
 import org.codedefenders.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -16,11 +16,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.codedefenders.assistant.entities.AssistantPromptEntity;
+import org.codedefenders.assistant.entities.AssistantUserSettingsEntity;
 import org.codedefenders.assistant.services.AssistantPromptService;
 import org.codedefenders.assistant.services.AssistantService;
 import org.codedefenders.beans.message.MessagesBean;
-import org.codedefenders.assistant.entities.AssistantPromptEntity;
-import org.codedefenders.assistant.entities.AssistantUserSettingsEntity;
 import org.codedefenders.service.UserService;
 import org.codedefenders.util.Constants;
 import org.codedefenders.util.Paths;

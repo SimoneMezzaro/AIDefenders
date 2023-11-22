@@ -10,11 +10,11 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.codedefenders.configuration.Configuration;
 import org.codedefenders.assistant.GPTObjects.GPTCompletion;
 import org.codedefenders.assistant.GPTObjects.GPTMessage;
 import org.codedefenders.assistant.GPTObjects.GPTRequest;
 import org.codedefenders.assistant.exceptions.GPTException;
+import org.codedefenders.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

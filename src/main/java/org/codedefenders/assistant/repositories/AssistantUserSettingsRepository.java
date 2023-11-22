@@ -7,9 +7,9 @@ import java.util.Optional;
 
 import javax.inject.Inject;
 
-import org.codedefenders.database.UncheckedSQLException;
-import org.codedefenders.assistant.entities.AssistantUserSettingsEntity;
 import org.codedefenders.assistant.entities.AssistantType;
+import org.codedefenders.assistant.entities.AssistantUserSettingsEntity;
+import org.codedefenders.database.UncheckedSQLException;
 import org.codedefenders.persistence.database.util.QueryRunner;
 import org.codedefenders.transaction.Transactional;
 import org.intellij.lang.annotations.Language;
@@ -98,9 +98,8 @@ public class AssistantUserSettingsRepository {
      * Updates the {@link AssistantUserSettingsEntity} of a specific user. If no settings are present in the database
      * for that user, then a new row is inserted for the user and is updated with the given settings.
      * @param settings the {@link AssistantUserSettingsEntity} to be updated
-     * @return the id of the updated {@link AssistantUserSettingsEntity}
      */
-    public Optional<Integer> updateAssistantUserSettings(AssistantUserSettingsEntity settings) {
+    public void updateAssistantUserSettings(AssistantUserSettingsEntity settings) {
         int userId = settings.getUserId();
         int remainingQuestionsDelta = settings.getRemainingQuestionsDelta();
         AssistantType assistantType = settings.getAssistantType();
@@ -108,7 +107,7 @@ public class AssistantUserSettingsRepository {
                 "VALUES (?, ?, ?) " +
                 "ON DUPLICATE KEY UPDATE Remaining_questions = Remaining_questions + ?, Assistant_type = ?;";
         try {
-            return queryRunner.insert(query, nextFromRS(rs -> rs.getInt(1)),
+            queryRunner.insert(query, nextFromRS(rs -> rs.getInt(1)),
                     userId, remainingQuestionsDelta, assistantType.toString(),
                     remainingQuestionsDelta, assistantType.toString());
         } catch (SQLException e) {

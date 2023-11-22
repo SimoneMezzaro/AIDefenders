@@ -8,8 +8,8 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
-import org.codedefenders.database.UncheckedSQLException;
 import org.codedefenders.assistant.entities.AssistantPromptEntity;
+import org.codedefenders.database.UncheckedSQLException;
 import org.codedefenders.persistence.database.util.QueryRunner;
 import org.codedefenders.transaction.Transactional;
 import org.intellij.lang.annotations.Language;
