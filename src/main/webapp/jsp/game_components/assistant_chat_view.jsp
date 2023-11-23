@@ -27,12 +27,20 @@
                 <textarea id="current-question" name="question" placeholder="Write your question here" class="card-body"></textarea>
             </div>
             <input id="assistant-game-id" type="hidden" name="gameId" value="<%= assistantGameId %>">
-            <div class="row g-2 justify-content-end mt-0">
-                <div id="submit-error" class="col-auto align-items-center" hidden>
-                    Your question is too long! Use at most 1500 words
+            <div class="row g-2 mt-0">
+                <div class="col-5 form-check form-switch mt-1">
+                    <input class="form-check-input" type="checkbox" id="include-answer-code" name="include-answer-code">
+                    <label class="form-check-label" for="include-answer-code">Include code example in the answer</label>
                 </div>
-                <div class="col-auto">
-                    <button type="submit" class="btn btn-primary assistant-button" id="sub-question-btn" disabled>Submit</button>
+                <div class="col-7">
+                    <div class="row justify-content-end">
+                        <div id="submit-error" class="col-auto align-items-center" hidden>
+                            Your question is too long! Use at most 1500 words
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary assistant-button" id="sub-question-btn" disabled>Submit</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </form>
@@ -144,6 +152,7 @@
             submitButton.addEventListener("click", (e) => {
                 e.preventDefault();
                 let question = currentQuestionBox.value.trim();
+                let answerCode = document.getElementById("include-answer-code").checked;
                 if(question.split(/\s+/g).length > 1500) {
                     submitError.hidden = false;
                     submitError.classList.add("d-flex");
@@ -153,8 +162,9 @@
                 document.getElementById("current-question-div").classList.add("loading");
                 submitError.hidden = true;
                 submitError.classList.remove("d-flex");
+                document.getElementById("include-answer-code").checked = false;
                 let gameId = document.getElementById("assistant-game-id").value;
-                let body = "action=question" + "&question=" + question + "&gameId=" + gameId;
+                let body = "action=question" + "&question=" + question + "&answerCode=" + answerCode + "&gameId=" + gameId;
                 if(question !== "") {
                     makePostRequest("/assistant", "application/x-www-form-urlencoded", body, (request) => {
                         if(request.readyState === XMLHttpRequest.DONE) {

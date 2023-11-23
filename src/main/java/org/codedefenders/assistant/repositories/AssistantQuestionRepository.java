@@ -42,13 +42,14 @@ public class AssistantQuestionRepository {
         Integer id = rs.getInt("ID");
         String question = rs.getString("Question");
         String answer = rs.getString("Answer");
+        Boolean showAnswerCode = rs.getBoolean("Show_answer_code");
         Integer promptId = rs.getInt("Prompt_ID");
         Integer playerId = rs.getInt("Player_ID");
         Boolean useful = rs.getBoolean("Useful");
         if(rs.wasNull()) {
             useful = null;
         }
-        return new AssistantQuestionEntity(id, question, answer, playerId, promptId, useful);
+        return new AssistantQuestionEntity(id, question, answer, showAnswerCode, playerId, promptId, useful);
     }
 
     /**
@@ -68,18 +69,19 @@ public class AssistantQuestionRepository {
     }
 
     /**
-     * Stores a new {@link AssistantQuestionEntity} containing the question text, the question prompt and the id of the
-     * player asking the question.
+     * Stores a new {@link AssistantQuestionEntity} containing the question text, the question prompt, the id of the
+     * player asking, and weather to display the code example in the answer.
      * @param assistantQuestionEntity the new {@link AssistantQuestionEntity} to be stored
      * @return the id of the newly stored question
      */
     public Optional<Integer> storeQuestion(@Nonnull AssistantQuestionEntity assistantQuestionEntity) {
         @Language("SQL") String query = "INSERT INTO assistant_questions "
-                + "(Question, Player_ID, Prompt_ID) "
-                + "VALUES (?, ?, ?);";
+                + "(Question, Show_answer_code, Player_ID, Prompt_ID) "
+                + "VALUES (?, ?, ?, ?);";
         try {
             return queryRunner.insert(query, resultSet -> nextFromRS(resultSet, rs -> rs.getInt(1)),
                             assistantQuestionEntity.getQuestion(),
+                            assistantQuestionEntity.getShowAnswerCode(),
                             assistantQuestionEntity.getPlayerId(),
                             assistantQuestionEntity.getPromptId()
                     );

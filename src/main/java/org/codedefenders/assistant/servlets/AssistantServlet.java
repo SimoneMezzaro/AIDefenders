@@ -146,6 +146,7 @@ public class AssistantServlet extends HttpServlet {
             throws IOException {
         Map<String, String> responseBody = new HashMap<>();
         String questionText = request.getParameter("question");
+        Boolean answerCode = Boolean.valueOf(request.getParameter("answerCode"));
         if(questionText == null || questionText.isEmpty()) {
             sendRedirectWithMessage(response, "You can't submit empty questions to the smart assistant", redirectUrl);
             return;
@@ -218,7 +219,7 @@ public class AssistantServlet extends HttpServlet {
             return;
         }
         int playerId = PlayerDAO.getPlayerIdForUserAndGame(userId, game.getId());
-        AssistantQuestionEntity question = new AssistantQuestionEntity(questionText, playerId);
+        AssistantQuestionEntity question = new AssistantQuestionEntity(questionText, playerId, answerCode);
         try {
             question = assistantService.sendQuestion(question, game, mutantsMap, testsList);
         } catch(GPTException e) {

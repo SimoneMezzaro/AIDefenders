@@ -2,6 +2,7 @@ package org.codedefenders.assistant.services;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -21,6 +22,10 @@ import org.codedefenders.game.Test;
 import org.codedefenders.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.TypeAdapter;
 
 /**
  * This class exposes methods to send and retrieve assistant data and to modify users and general settings related to
@@ -82,7 +87,7 @@ public class AssistantService {
         }
         question.setAnswer(answer);
         assistantQuestionRepository.updateAnswer(question);
-        return question;
+        return getQuestionWithoutHiddenAnswerParts(question);
     }
 
     /**
@@ -91,7 +96,39 @@ public class AssistantService {
      * @return all the questions made by a given player with the relative answers, ordered by timestamp
      */
     public List<AssistantQuestionEntity> getQuestionsByPlayer(Integer playerId) {
-        return assistantQuestionRepository.getQuestionsAndAnswersByPlayer(playerId);
+        return assistantQuestionRepository.getQuestionsAndAnswersByPlayer(playerId)
+                .stream().map(this::getQuestionWithoutHiddenAnswerParts).collect(Collectors.toList());
+    }
+
+    /**
+     * Creates a copy of a given question, but with a filtered answer. The answer of the new copy does not contain the
+     * field {@code code} if the given question had {@code showAnswerCode} flag equal to {@code true}. If the flag is
+     * {@code false} or if the answer is not in JSON format the new answer will be equal to the old one.
+     * @param question the question containing the answer to be filtered
+     * @return a copy of the given question containing the filtered answer
+     */
+    private AssistantQuestionEntity getQuestionWithoutHiddenAnswerParts(AssistantQuestionEntity question) {
+        String answer = question.getAnswer();
+        if(answer != null && !question.getShowAnswerCode()) {
+            Gson gson = new Gson();
+            TypeAdapter<JsonObject> strictAdapter = gson.getAdapter(JsonObject.class);
+            try {
+                JsonObject jsonObj = strictAdapter.fromJson(answer);
+                jsonObj.remove("code");
+                answer = gson.toJson(jsonObj);
+            } catch(Exception e) {
+                answer = question.getAnswer();
+            }
+        }
+        return new AssistantQuestionEntity(
+                question.getId(),
+                question.getQuestion(),
+                answer,
+                question.getShowAnswerCode(),
+                question.getPlayerId(),
+                question.getPromptId(),
+                question.getUseful()
+        );
     }
 
     /**
