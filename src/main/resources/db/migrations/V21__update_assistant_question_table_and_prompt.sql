@@ -15,3 +15,16 @@ BEGIN
     );
 END//
 DELIMITER ;
+
+DELETE FROM `assistant_prompts`;
+
+INSERT INTO `assistant_prompts` (`Prompt`, `As_separate_context`, `Default_flag`) VALUES ('You are given the Java class between """ """.
+"""<class_under_test>"""
+<mutants(You are also given the following information about some mutants on the Java class:)>
+<tests(Finally you are given some tests for the Java class:)>
+Reply to the following question by providing
+- a short answer using only one sentence
+- an explanation of the answer using at most 100 words
+- a code example
+Provide the reply in JSON format with the following keys: answer, explanation, code.
+', '1', '1');
