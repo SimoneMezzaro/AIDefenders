@@ -82,10 +82,10 @@
                 <div class="card-body">
                     <div class="row g-2">
                         <div class="col-auto">
-                            <button type="submit" class="btn btn-primary" id="enable-btn">Enable Assistant</button>
+                            <button type="submit" class="btn btn-primary" id="enable-btn">Turn ON Assistant</button>
                         </div>
                         <div class="col-auto">
-                            <button type="button" class="btn btn-danger" id="disable-btn">Disable Assistant</button>
+                            <button type="button" class="btn btn-danger" id="disable-btn">Turn OFF Assistant</button>
                         </div>
                     </div>
                 </div>
@@ -562,7 +562,7 @@
                 this.updateUsersSettingsList = function(settings) {
                     let tableBody = document.getElementById("users-settings-table-body");
                     let columnsList = ["userId", "username", "email", "questionsNumber"];
-                    let assistantTypes = ["None", "Not Guided"];
+                    let assistantTypes = {"NONE": "Disabled", "NOT_GUIDED": "Enabled"};
                     tableBody.replaceChildren();
                     for(let user of settings) {
                         let row = document.createElement("tr");
@@ -581,11 +581,11 @@
                         column = document.createElement("td");
                         let select = document.createElement("select");
                         select.classList.add("form-select");
-                        for(let type of assistantTypes) {
+                        for(let type in assistantTypes) {
                             let option = document.createElement("option");
-                            option.value = type.toUpperCase().replace(" ", "_");
-                            option.innerText = type;
-                            if(type.toUpperCase().replace(" ", "_") === user["assistantType"]) {
+                            option.value = type;
+                            option.innerText = assistantTypes[type];
+                            if(type === user["assistantType"]) {
                                 option.selected = true;
                             }
                             select.appendChild(option);
@@ -602,7 +602,7 @@
                         button.appendChild(i);
                         button.addEventListener("click", (e) => {
                             let row = e.target.closest("tr");
-                            let assistantType = row.getElementsByTagName("select")[0].value.toUpperCase();
+                            let assistantType = row.getElementsByTagName("select")[0].value;
                             let remainingQuestions = row.getElementsByTagName("input")[0].value;
                             let body = {
                                 "action": "usersSettingsUpdate",
