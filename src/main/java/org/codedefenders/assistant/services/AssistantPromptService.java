@@ -1,19 +1,22 @@
 package org.codedefenders.assistant.services;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.codedefenders.analysis.gameclass.MethodDescription;
 import org.codedefenders.assistant.entities.AssistantPromptEntity;
 import org.codedefenders.assistant.repositories.AssistantPromptRepository;
+import org.codedefenders.auth.CodeDefendersAuth;
+import org.codedefenders.dto.MutantDTO;
 import org.codedefenders.game.AbstractGame;
+import org.codedefenders.game.GameAccordionMapping;
 import org.codedefenders.game.Mutant;
 import org.codedefenders.game.Test;
+import org.codedefenders.service.game.GameService;
 import org.codedefenders.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,18 +28,22 @@ public class AssistantPromptService {
 
     @Inject
     private AssistantPromptRepository assistantPromptRepository;
+    @Inject
+    private CodeDefendersAuth login;
+    @Inject
+    GameService gameService;
     private static final Logger logger = LoggerFactory.getLogger(AssistantPromptService.class);
 
     /**
      * Parses a given prompt and builds an enriched prompt by substituting each placeholder in the given prompt with
-     * actual information from a game. This information includes the code under test, mutants code or description, tests
-     * code and the text of a question made by a player for the assistant.
+     * actual information from a game. This information includes the code under test, mutants code or modified method,
+     * tests code and the text of a question made by a player for the assistant.
      * @param prompt the prompt to be parsed ad enriched
      * @param question the assistant question to be embedded in the prompt
      * @param game the game, containing the code under test, where the question was made
      * @param mutants a map containing mutants to be added to the prompt. For each mutant the map contains a flag which
      *                is {@code true} if the code of the mutant should be included in the prompt and it is {@code false}
-     *                if the description of the mutant should be included instead
+     *                if the name of the method modified by the mutant should be included instead
      * @param tests a list containing tests whose code should be added to the prompt
      * @return the newly built enriched prompt
      */
@@ -53,6 +60,23 @@ public class AssistantPromptService {
             placeholders.add(matcher.group());
         }
 
+        // Populates a map containing for each mutant the name of the method modified by the mutant
+        List<MutantDTO> mutantList = mutants.keySet()
+                .stream()
+                .map(m -> gameService.getMutant(login.getUserId(), m))
+                .collect(Collectors.toList());
+        List<MethodDescription> methodDescriptions = game.getCUT().getMethodDescriptions();
+        GameAccordionMapping mapping = GameAccordionMapping.computeForMutants(methodDescriptions, mutantList);
+        Map<Integer, String> mutantMethodMap = new HashMap<>();
+        for(Integer mutantId : mapping.elementsOutsideMethods) {
+            mutantMethodMap.put(mutantId, null); // null is used to indicate mutants outside methods
+        }
+        for (MethodDescription description : methodDescriptions) {
+            for(Integer mutantId : mapping.elementsPerMethod.get(description)) {
+                mutantMethodMap.put(mutantId, description.getDescription());
+            }
+        }
+
         // builds a string containing all mutants information to be added to the prompt
         StringBuilder mutantsString = new StringBuilder();
         for(Mutant m : mutants.keySet()) {
@@ -60,7 +84,12 @@ public class AssistantPromptService {
             if(mutants.get(m)) {
                 mutantsString.append("has code:\n").append(m.getAsString());
             } else {
-                mutantsString.append(String.join(", ", m.getHTMLReadout()).toLowerCase()).append(".");
+                String method = mutantMethodMap.get(m.getId());
+                if(method == null) {
+                    mutantsString.append("modifies code outside methods.");
+                } else {
+                    mutantsString.append("modifies the method ").append(method).append(".");
+                }
             }
             mutantsString.append("\n\n");
         }
@@ -97,13 +126,13 @@ public class AssistantPromptService {
 
     /**
      * Parses a given prompt and builds an enriched prompt by substituting each placeholder in the given prompt with
-     * actual information from a game. This information includes the code under test, mutants code or description and
-     * tests code.
+     * actual information from a game. This information includes the code under test, mutants code or modified method
+     * and tests code.
      * @param prompt the prompt to be parsed ad enriched
      * @param game the game containing the code under test
      * @param mutants a map containing mutants to be added to the prompt. For each mutant the map contains a flag which
      *                is {@code true} if the code of the mutant should be included in the prompt and it is {@code false}
-     *                if the description of the mutant should be included instead
+     *                if the name of the method modified by the mutant should be included instead
      * @param tests a list containing tests whose code should be added to the prompt
      * @return the newly built enriched prompt
      */
