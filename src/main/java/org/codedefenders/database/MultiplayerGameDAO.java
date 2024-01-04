@@ -64,6 +64,7 @@ public class MultiplayerGameDAO {
         GameLevel level = GameLevel.valueOf(rs.getString("Level"));
         int maxAssertionsPerTest = rs.getInt("MaxAssertionsPerTest");
         boolean chatEnabled = rs.getBoolean("ChatEnabled");
+        boolean assistantEnabled = rs.getBoolean("AssistantEnabled");
         CodeValidatorLevel mutantValidator = CodeValidatorLevel.valueOf(rs.getString("MutantValidator"));
         boolean capturePlayersIntention = rs.getBoolean("CapturePlayersIntention");
         boolean requiresValidation = rs.getBoolean("RequiresValidation");
@@ -88,6 +89,7 @@ public class MultiplayerGameDAO {
                 .attackerValue(attackerValue)
                 .defenderValue(defenderValue)
                 .chatEnabled(chatEnabled)
+                .assistantEnabled(assistantEnabled)
                 .capturePlayersIntention(capturePlayersIntention)
                 .mutantValidatorLevel(mutantValidator)
                 .requiresValidation(requiresValidation)
@@ -171,6 +173,7 @@ public class MultiplayerGameDAO {
         GameState state = game.getState();
         int maxAssertionsPerTest = game.getMaxAssertionsPerTest();
         boolean chatEnabled = game.isChatEnabled();
+        boolean assistantEnabled = game.isAssistantEnabled();
         CodeValidatorLevel mutantValidatorLevel = game.getMutantValidatorLevel();
         boolean capturePlayersIntention = game.isCapturePlayersIntention();
         GameMode mode = game.getMode();
@@ -196,9 +199,10 @@ public class MultiplayerGameDAO {
                     CapturePlayersIntention,
                     EquivalenceThreshold,
                     Game_Duration_Minutes,
-                    Classroom_ID
+                    Classroom_ID,
+                    AssistantEnabled
                 )
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
         """;
 
         DatabaseValue<?>[] values = new DatabaseValue[]{
@@ -219,6 +223,7 @@ public class MultiplayerGameDAO {
                 DatabaseValue.of(automaticMutantEquivalenceThreshold),
                 DatabaseValue.of(gameDurationMinutes),
                 DatabaseValue.of(classroomId),
+                DatabaseValue.of(assistantEnabled)
         };
 
         final int result = DB.executeUpdateQueryGetKeys(query, values);

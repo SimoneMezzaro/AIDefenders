@@ -252,6 +252,14 @@
                         </div>
 
                         <div class="col-12"
+                             title="Allows all players to use the smart assistant.">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="assistant-switch" name="assistantEnabled">
+                                <label class="form-check-label" for="assistant-switch">Smart Assistant</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12"
                              title="Automatically start games once they are created.">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="start-games-switch" name="startGames">
@@ -1182,6 +1190,10 @@
         tr = table.insertRow();
         tr.insertCell().textContent = 'Start Game';
         tr.insertCell().textContent = gameSettings.startGame;
+
+        tr = table.insertRow();
+        tr.insertCell().textContent = 'Assistant Enabled';
+        tr.insertCell().textContent = gameSettings.assistantEnabled;
 
         tr = table.insertRow();
         tr.insertCell().textContent = 'Game Duration';

@@ -79,7 +79,7 @@ public class AssistantServlet extends HttpServlet {
         }
         int userId = login.getUserId();
         int playerId = PlayerDAO.getPlayerIdForUserAndGame(userId, game.getId());
-        if(!assistantService.isAssistantEnabledForUser(userId)) {
+        if(!assistantService.isAssistantEnabledForUser(userId, game)) {
             sendRedirectWithMessage(response, "Your smart assistant is currently disabled", redirectUrl);
             return;
         }
@@ -113,7 +113,7 @@ public class AssistantServlet extends HttpServlet {
         if(redirectUrl == null){
             return;
         }
-        if(!assistantService.isAssistantEnabledForUser(login.getUserId())) {
+        if(!assistantService.isAssistantEnabledForUser(login.getUserId(), game)) {
             sendRedirectWithMessage(response, "Your smart assistant is currently disabled", redirectUrl);
             return;
         }

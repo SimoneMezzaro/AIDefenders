@@ -148,6 +148,8 @@ public abstract class CreateGamesServlet extends HttpServlet {
 
         boolean chatEnabled = request.getParameter("chatEnabled") != null;
 
+        boolean assistantEnabled = request.getParameter("assistantEnabled") != null;
+
         boolean captureIntentions = request.getParameter("captureIntentions") != null;
 
         int equivalenceThreshold = getIntParameter(request, "automaticEquivalenceTrigger").get();
@@ -172,6 +174,7 @@ public abstract class CreateGamesServlet extends HttpServlet {
                 maxAssertionsPerTest,
                 mutantValidatorLevel,
                 chatEnabled,
+                assistantEnabled,
                 captureIntentions,
                 equivalenceThreshold,
                 level,

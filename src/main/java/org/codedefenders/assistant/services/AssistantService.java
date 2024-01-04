@@ -144,12 +144,14 @@ public class AssistantService {
 
     /**
      * Checks whether the assistant is enabled for the given user. The assistant is enabled for a user if it is
-     * generally enabled and the user has {@link AssistantType} different from {@link AssistantType#NONE}.
+     * generally enabled and either the user has {@link AssistantType} different from {@link AssistantType#NONE} or the
+     * assistant is enabled for all players in the given game.
      * @param userId the id of the given user
+     * @param game a game joined by the given user
      * @return {@code true} if the assistant is enabled for the given user; {@code false} otherwise
      * @throws IllegalStateException if the method is unable to retrieve general or user settings
      */
-    public boolean isAssistantEnabledForUser(int userId) {
+    public boolean isAssistantEnabledForUser(int userId, AbstractGame game) {
         Optional<Boolean> enabled = assistantGeneralSettingsRepository.getAssistantEnabled();
         if(enabled.isEmpty()) {
             logger.error("Unable to retrieve the value of assistant enabled setting");
@@ -157,6 +159,9 @@ public class AssistantService {
         }
         if(!enabled.get()) {
             return false;
+        }
+        if(game.isAssistantEnabled()) {
+            return true;
         }
         Optional<AssistantUserSettingsEntity> entity = assistantUserSettingsRepository.getAssistantUserSettingsByUserId(userId);
         if(entity.isEmpty()) {

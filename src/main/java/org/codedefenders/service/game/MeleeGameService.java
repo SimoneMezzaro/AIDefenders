@@ -207,6 +207,7 @@ public class MeleeGameService extends AbstractGameService {
                 game.getMaxAssertionsPerTest())
                 .level(game.getLevel())
                 .chatEnabled(game.isChatEnabled())
+                .assistantEnabled(game.isAssistantEnabled())
                 .capturePlayersIntention(game.isCapturePlayersIntention())
                 .lineCoverage(game.getLineCoverage())
                 .mutantCoverage(game.getMutantCoverage())

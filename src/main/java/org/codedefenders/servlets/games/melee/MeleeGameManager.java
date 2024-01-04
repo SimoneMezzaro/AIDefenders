@@ -220,7 +220,7 @@ public class MeleeGameManager extends HttpServlet {
 
         request.setAttribute("game", game);
         request.setAttribute("playerId", playerId);
-        request.setAttribute("assistantEnabled", assistantService.isAssistantEnabledForUser(userId));
+        request.setAttribute("assistantEnabled", assistantService.isAssistantEnabledForUser(userId, game));
 
         // We need to compute/set this here for the `player_view.jsp`.
         List<Test> playerTests = game.getTests()

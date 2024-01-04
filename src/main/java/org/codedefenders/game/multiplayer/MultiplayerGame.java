@@ -70,6 +70,8 @@ public class MultiplayerGame extends AbstractGame {
 
     private boolean chatEnabled;
 
+    private boolean assistantEnabled;
+
     private int gameDurationMinutes;
 
     private long startTimeUnixSeconds;
@@ -93,6 +95,7 @@ public class MultiplayerGame extends AbstractGame {
         private boolean requiresValidation = false;
         private boolean capturePlayersIntention = false;
         private boolean chatEnabled = false;
+        private boolean assistantEnabled = false;
         private int gameDurationMinutes;
         private long startTimeUnixSeconds;
         private float lineCoverage = 1f;
@@ -136,6 +139,11 @@ public class MultiplayerGame extends AbstractGame {
 
         public Builder chatEnabled(boolean chatEnabled) {
             this.chatEnabled = chatEnabled;
+            return this;
+        }
+
+        public Builder assistantEnabled(boolean assistantEnabled) {
+            this.assistantEnabled = assistantEnabled;
             return this;
         }
 
@@ -233,6 +241,7 @@ public class MultiplayerGame extends AbstractGame {
         this.requiresValidation = builder.requiresValidation;
         this.maxAssertionsPerTest = builder.maxAssertionsPerTest;
         this.chatEnabled = builder.chatEnabled;
+        this.assistantEnabled = builder.assistantEnabled;
         this.mutantValidatorLevel = builder.mutantValidatorLevel;
         this.capturePlayersIntention = builder.capturePlayersIntention;
         this.automaticMutantEquivalenceThreshold = builder.automaticMutantEquivalenceThreshold;
@@ -280,6 +289,11 @@ public class MultiplayerGame extends AbstractGame {
     @Override
     public boolean isChatEnabled() {
         return chatEnabled;
+    }
+
+    @Override
+    public boolean isAssistantEnabled() {
+        return assistantEnabled;
     }
 
     public int getAutomaticMutantEquivalenceThreshold() {

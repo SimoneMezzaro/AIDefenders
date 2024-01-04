@@ -181,10 +181,12 @@ public class MultiplayerGameSelectionManager extends HttpServlet {
         float mutantCoverage = getFloatParameter(request, "mutant_cov").orElse(1.1f);
         boolean chatEnabled = parameterThenOrOther(request, "chatEnabled", true, false);
         boolean capturePlayersIntention = parameterThenOrOther(request, "capturePlayersIntention", true, false);
+        boolean assistantEnabled = parameterThenOrOther(request, "assistantEnabled", true, false);
 
         MultiplayerGame newGame = new MultiplayerGame.Builder(classId, login.getUserId(), maxAssertionsPerTest)
                 .level(level)
                 .chatEnabled(chatEnabled)
+                .assistantEnabled(assistantEnabled)
                 .capturePlayersIntention(capturePlayersIntention)
                 .lineCoverage(lineCoverage)
                 .mutantCoverage(mutantCoverage)

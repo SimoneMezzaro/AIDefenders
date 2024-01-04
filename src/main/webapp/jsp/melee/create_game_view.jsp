@@ -206,13 +206,24 @@
                     </div>
                 </div>
 
-                <div class="row mb-3"
+                <div class="row mb-1"
                      title="Allows players to chat with each other.">
                     <label class="col-4 col-form-label" id="chat-label" for="chat-switch">Game Chat</label>
                     <div class="col-8 d-flex align-items-center">
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="chat-switch" name="chatEnabled" checked>
                             <label class="form-check-label" for="chat-switch">Enable Chat</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3"
+                     title="Allows all players to use the smart assistant.">
+                    <label class="col-4 col-form-label" id="assistant-label" for="assistant-switch">Smart Assistant</label>
+                    <div class="col-8 d-flex align-items-center">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="assistant-switch" name="assistantEnabled">
+                            <label class="form-check-label" for="assistant-switch">Enable Smart Assistant for all players</label>
                         </div>
                     </div>
                 </div>

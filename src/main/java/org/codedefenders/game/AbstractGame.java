@@ -143,6 +143,8 @@ public abstract class AbstractGame {
 
     public abstract boolean isChatEnabled();
 
+    public abstract boolean isAssistantEnabled();
+
     protected void setMode(GameMode newMode) {
         this.mode = newMode;
     }

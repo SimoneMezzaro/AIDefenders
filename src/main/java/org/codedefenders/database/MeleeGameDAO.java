@@ -63,6 +63,7 @@ public class MeleeGameDAO {
         GameLevel level = GameLevel.valueOf(rs.getString("Level"));
         int maxAssertionsPerTest = rs.getInt("MaxAssertionsPerTest");
         boolean chatEnabled = rs.getBoolean("ChatEnabled");
+        boolean assistantEnabled = rs.getBoolean("AssistantEnabled");
         CodeValidatorLevel mutantValidator = CodeValidatorLevel.valueOf(rs.getString("MutantValidator"));
         boolean capturePlayersIntention = rs.getBoolean("CapturePlayersIntention");
         boolean requiresValidation = rs.getBoolean("RequiresValidation");
@@ -89,6 +90,7 @@ public class MeleeGameDAO {
                 .state(state)
                 .level(level)
                 .chatEnabled(chatEnabled)
+                .assistantEnabled(assistantEnabled)
                 .capturePlayersIntention(capturePlayersIntention)
                 .mutantValidatorLevel(mutantValidator)
                 .requiresValidation(requiresValidation)
@@ -181,6 +183,7 @@ public class MeleeGameDAO {
         int automaticMutantEquivalenceThreshold = game.getAutomaticMutantEquivalenceThreshold();
         int gameDurationMinutes = game.getGameDurationMinutes();
         Integer classroomId = game.getClassroomId().orElse(null);
+        boolean assistantEnabled = game.isAssistantEnabled();
 
         @Language("SQL") String query = """
                 INSERT INTO games (
@@ -200,9 +203,10 @@ public class MeleeGameDAO {
                     CapturePlayersIntention,
                     EquivalenceThreshold,
                     Game_Duration_Minutes,
-                    Classroom_ID
+                    Classroom_ID,
+                    AssistantEnabled
                 )
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
         """;
 
         DatabaseValue<?>[] values = new DatabaseValue[]{
@@ -223,6 +227,7 @@ public class MeleeGameDAO {
                 DatabaseValue.of(automaticMutantEquivalenceThreshold),
                 DatabaseValue.of(gameDurationMinutes),
                 DatabaseValue.of(classroomId),
+                DatabaseValue.of(assistantEnabled)
         };
 
         final int result = DB.executeUpdateQueryGetKeys(query, values);

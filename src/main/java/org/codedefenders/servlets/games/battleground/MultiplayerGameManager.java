@@ -234,7 +234,7 @@ public class MultiplayerGameManager extends HttpServlet {
 
         request.setAttribute("game", game);
         request.setAttribute("playerId", playerId);
-        request.setAttribute("assistantEnabled", assistantService.isAssistantEnabledForUser(login.getUserId()));
+        request.setAttribute("assistantEnabled", assistantService.isAssistantEnabledForUser(login.getUserId(), game));
 
         final boolean isGameClosed = game.getState() == GameState.FINISHED
                 || (game.getState() == GameState.ACTIVE && GameDAO.isGameExpired(gameId));
