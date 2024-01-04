@@ -286,7 +286,9 @@
             let mutants = new Map(JSON.parse('${mutantAccordion.jsonMutants()}'));
             let tests = new Map(JSON.parse('${testAccordion.testsAsJSON}'));
             for(let k of tests.keys()) {
-                this.availableTags.push("@test" + k);
+                if(tests.get(k).canView) {
+                    this.availableTags.push("@test" + k);
+                }
             }
             for(let k of mutants.keys()) {
                 this.availableTags.push("@mutant" + k);
