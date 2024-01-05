@@ -1,6 +1,4 @@
 
-<link href="${url.forPath("/css/specific/smart_assistant.css")}" rel="stylesheet">
-
 <div>
     <div class="game-component-header">
         <h3>Previous Questions</h3>
