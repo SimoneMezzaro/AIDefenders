@@ -14,8 +14,11 @@ An instance of Code Defenders including the AI Defenders assistant can be easily
 
 ### Configuration
 
+A `.env` file must be created in the `/docker/` folder to set configuration properties for AI Defenders. A template for
+the file is available in the [example.env](docker/example.env) file.
+
 Since AI Defenders relies on OpenAI API to provide its assistance, it requires to specify an OpenAI token key and the
-GPT model to be used. Both properties can be specified in the [.env](docker/.env) file.
+GPT model to be used. Both properties can be specified in the `.env` file.
 
 The API token can be retrieved from you account on the [OpenAI website](https://platform.openai.com/api-keys) and can be
 added as `CODEDEFENDERS_OPENAI_API_KEY`.
@@ -24,11 +27,12 @@ The GPT model can instead be selected among the [currently available models](htt
 and can be added as `CODEDEFENDERS_OPENAI_CHATGPT_MODEL`.
 
 Refer to the [original Code Defenders Docker documentation](docker/README.md) for editing additional properties in the
-[.env](docker/.env) file.
+`.env` file.
 
 ### Deployment
 
-To locally deploy the platform move to the root of the AI Defenders repository and run the following commands:
+After setting up the `.env` file, move to the root of the AI Defenders repository and run the following commands to
+deploy the platform:
 ```sh
 docker build --file ./docker/Dockerfile --tag localhost/aidefenders:aid .
 cd docker
