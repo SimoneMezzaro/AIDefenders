@@ -116,6 +116,10 @@ public class Configuration {
 
     protected Boolean javamelody;
 
+    protected String openaiApiKey;
+
+    protected String openaiChatgptModel;
+
     /**
      * Validates the currently configured Configuration.
      *
@@ -460,6 +464,14 @@ public class Configuration {
         } else {
             return authAdminRole;
         }
+    }
+
+    public String getOpenaiApiKey() {
+        return openaiApiKey;
+    }
+
+    public String getOpenaiChatgptModel() {
+        return openaiChatgptModel;
     }
 
     /**

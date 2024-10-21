@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> This file contains the original documentation for deploying Code Defenders using Docker.
+Refer to [README.md](../README.md) to run the AI Defenders integration.
+
 # Code Defenders
 
 This Code Defenders, a mutation testing game.  

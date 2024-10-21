@@ -20,6 +20,7 @@ public class GameSettings implements Serializable {
     @Expose private final int maxAssertionsPerTest;
     @Expose private final CodeValidatorLevel mutantValidatorLevel;
     @Expose private final boolean chatEnabled;
+    @Expose private final boolean assistantEnabled;
     @Expose private final boolean captureIntentions;
     @Expose private final int equivalenceThreshold;
     @Expose private final GameLevel level;
@@ -38,6 +39,7 @@ public class GameSettings implements Serializable {
             int maxAssertionsPerTest,
             CodeValidatorLevel mutantValidatorLevel,
             boolean chatEnabled,
+            boolean assistantEnabled,
             boolean captureIntentions,
             int equivalenceThreshold,
             GameLevel level,
@@ -52,6 +54,7 @@ public class GameSettings implements Serializable {
         this.maxAssertionsPerTest = maxAssertionsPerTest;
         this.mutantValidatorLevel = mutantValidatorLevel;
         this.chatEnabled = chatEnabled;
+        this.assistantEnabled = assistantEnabled;
         this.captureIntentions = captureIntentions;
         this.equivalenceThreshold = equivalenceThreshold;
         this.level = level;
@@ -74,6 +77,7 @@ public class GameSettings implements Serializable {
             other.maxAssertionsPerTest,
             other.mutantValidatorLevel,
             other.chatEnabled,
+            other.assistantEnabled,
             other.captureIntentions,
             other.equivalenceThreshold,
             other.level,
@@ -112,6 +116,10 @@ public class GameSettings implements Serializable {
         return chatEnabled;
     }
 
+    public boolean isAssistantEnabled() {
+        return assistantEnabled;
+    }
+
     public boolean isCaptureIntentions() {
         return captureIntentions;
     }
@@ -148,6 +156,7 @@ public class GameSettings implements Serializable {
         private int maxAssertionsPerTest;
         private CodeValidatorLevel mutantValidatorLevel;
         private boolean chatEnabled;
+        private boolean assistantEnabled;
         private boolean captureIntentions;
         private int equivalenceThreshold;
         private GameLevel level;
@@ -164,6 +173,7 @@ public class GameSettings implements Serializable {
                 int maxAssertionsPerTest,
                 CodeValidatorLevel mutantValidatorLevel,
                 boolean chatEnabled,
+                boolean assistantEnabled,
                 boolean captureIntentions,
                 int equivalenceThreshold,
                 GameLevel level,
@@ -178,6 +188,7 @@ public class GameSettings implements Serializable {
             this.maxAssertionsPerTest = maxAssertionsPerTest;
             this.mutantValidatorLevel = mutantValidatorLevel;
             this.chatEnabled = chatEnabled;
+            this.assistantEnabled = assistantEnabled;
             this.captureIntentions = captureIntentions;
             this.equivalenceThreshold = equivalenceThreshold;
             this.level = level;
@@ -219,6 +230,11 @@ public class GameSettings implements Serializable {
 
         public Builder setChatEnabled(boolean chatEnabled) {
             this.chatEnabled = chatEnabled;
+            return this;
+        }
+
+        public Builder setAssistantEnabled(boolean assistantEnabled) {
+            this.assistantEnabled = assistantEnabled;
             return this;
         }
 
@@ -266,6 +282,7 @@ public class GameSettings implements Serializable {
                     maxAssertionsPerTest,
                     mutantValidatorLevel,
                     chatEnabled,
+                    assistantEnabled,
                     captureIntentions,
                     equivalenceThreshold,
                     level,

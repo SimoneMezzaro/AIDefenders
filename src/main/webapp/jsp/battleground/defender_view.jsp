@@ -105,6 +105,14 @@
 
 <%-- -------------------------------------------------------------------------------- --%>
 
+<%
+    Boolean assistantEnabled = (Boolean) request.getAttribute("assistantEnabled");
+    if(assistantEnabled) {
+%>
+    <jsp:include page="../game_components/smart_assistant.jsp"/>
+<%
+    }
+%>
 
 <div class="row">
     <div class="col-xl-6 col-12" id="cut-div">

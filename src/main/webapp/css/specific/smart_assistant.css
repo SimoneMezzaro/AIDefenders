@@ -1,0 +1,97 @@
+
+#current-question {
+    border: none;
+}
+
+#yes-btn {
+    margin-left: 10px;
+    width: 66px;
+}
+
+#yes-btn.feedback-disabled {
+    color: #fff;
+    background-color: #157347;
+    border-color: #146c43;
+    box-shadow: 0 0 0 0.25rem rgba(60,153,110,.5);
+    opacity: 1;
+}
+
+#no-btn {
+    margin-right: 30px;
+    width: 66px;
+}
+
+#no-btn.feedback-disabled {
+    color: #fff;
+    background-color: #bb2d3b;
+    border-color: #b02a37;
+    box-shadow: 0 0 0 0.25rem rgba(225,83,97,.5);
+    opacity: 1;
+}
+
+#submit-error {
+    color: red;
+}
+
+.assistant-container {
+    height: 230px;
+    min-height: 200px;
+}
+
+.assistant-button {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+.assistant-formatted-text {
+    white-space: pre-wrap;
+}
+
+.mutant-tag {
+    color: var(--bg-attacker);
+}
+
+.test-tag {
+    color: var(--bg-defender);
+}
+
+#prompt-text {
+    min-height: 300px;
+}
+
+#assistant-status.enabled {
+    color: green;
+}
+
+#assistant-status.disabled {
+    color: red;
+}
+
+#add-remove-remaining-btn {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.prompt-placeholder {
+    color: darkgreen;
+}
+
+#collapse-assistant-btn {
+    color: black;
+    background-color: transparent;
+    width: 185px;
+    padding: .375rem .75rem;
+}
+
+#collapse-assistant-btn:focus {
+    box-shadow: none;
+}
+
+#collapse-assistant-btn.accordion-button:not(.collapsed) {
+    box-shadow: none;
+}
+
+#collapse-assistant-btn.accordion-button:not(.collapsed)::after {
+    /* Copied from Bootstrap 5. */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23212529'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+}

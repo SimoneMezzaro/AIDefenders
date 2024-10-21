@@ -38,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.text.StringEscapeUtils;
+import org.codedefenders.assistant.services.AssistantService;
 import org.codedefenders.auth.CodeDefendersAuth;
 import org.codedefenders.beans.game.PreviousSubmissionBean;
 import org.codedefenders.beans.message.MessagesBean;
@@ -173,6 +174,9 @@ public class MeleeGameManager extends HttpServlet {
     @Inject
     private URLUtils url;
 
+    @Inject
+    private AssistantService assistantService;
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -216,7 +220,7 @@ public class MeleeGameManager extends HttpServlet {
 
         request.setAttribute("game", game);
         request.setAttribute("playerId", playerId);
-
+        request.setAttribute("assistantEnabled", assistantService.isAssistantEnabledForUser(userId, game));
 
         // We need to compute/set this here for the `player_view.jsp`.
         List<Test> playerTests = game.getTests()

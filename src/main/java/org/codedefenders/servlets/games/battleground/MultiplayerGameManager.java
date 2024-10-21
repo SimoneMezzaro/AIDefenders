@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.text.StringEscapeUtils;
+import org.codedefenders.assistant.services.AssistantService;
 import org.codedefenders.auth.CodeDefendersAuth;
 import org.codedefenders.beans.game.PreviousSubmissionBean;
 import org.codedefenders.beans.message.MessagesBean;
@@ -193,6 +194,9 @@ public class MultiplayerGameManager extends HttpServlet {
     @Inject
     private KillMapService killMapService;
 
+    @Inject
+    private AssistantService assistantService;
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -230,6 +234,7 @@ public class MultiplayerGameManager extends HttpServlet {
 
         request.setAttribute("game", game);
         request.setAttribute("playerId", playerId);
+        request.setAttribute("assistantEnabled", assistantService.isAssistantEnabledForUser(login.getUserId(), game));
 
         final boolean isGameClosed = game.getState() == GameState.FINISHED
                 || (game.getState() == GameState.ACTIVE && GameDAO.isGameExpired(gameId));

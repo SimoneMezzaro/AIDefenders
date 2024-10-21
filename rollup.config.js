@@ -54,6 +54,7 @@ const moduleConfig = {
         `${SRC_DIR}/thirdparty/codemirror.js`,
         `${SRC_DIR}/thirdparty/datatables.js`,
         `${SRC_DIR}/thirdparty/jquery.js`,
+        `${SRC_DIR}/thirdparty/jquery-ui.js`,
     ],
     plugins: PLUGINS,
     output: {

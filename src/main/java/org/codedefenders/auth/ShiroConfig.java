@@ -148,6 +148,7 @@ public class ShiroConfig {
         // org.codedefenders.util.Paths.ADMIN_USERS = "/admin/users";
         // org.codedefenders.util.Paths.ADMIN_SETTINGS = "/admin/settings";
         // org.codedefenders.util.Paths.ADMIN_KILLMAPS = "/admin/killmaps";
+        // org.codedefenders.util.Paths.ADMIN_ASSISTANT = "/admin/assistant";
 
         // org.codedefenders.util.Paths.ADMIN_PUZZLE_OVERVIEW = "/admin/puzzles";
         // org.codedefenders.util.Paths.ADMIN_PUZZLE_MANAGEMENT = "/admin/puzzles/management";
@@ -168,6 +169,10 @@ public class ShiroConfig {
 
         fcMan.createChain("/classroom/**", "authc");
         fcMan.createChain("/classrooms", "authc");
+
+        // Smart assistant URLs
+        // org.codedefenders.util.Paths.SMART_ASSISTANT = /assistant
+        fcMan.createChain("/assistant", "authc");
 
         PathMatchingFilterChainResolver resolver = new PathMatchingFilterChainResolver();
         resolver.setFilterChainManager(fcMan);

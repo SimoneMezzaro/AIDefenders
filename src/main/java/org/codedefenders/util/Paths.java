@@ -70,6 +70,7 @@ public class Paths {
     public static final String CLASSROOM = "/classroom";
     public static final String CLASSROOMS_OVERVIEW = "/classrooms";
     public static final String CLASSROOM_CREATE_GAMES = "/classroom/creategames";
+    public static final String SMART_ASSISTANT = "/assistant";
 
 
     public static final String ADMIN_PAGE = "/admin";
@@ -80,6 +81,7 @@ public class Paths {
     public static final String ADMIN_SETTINGS = "/admin/settings";
     public static final String ADMIN_KILLMAPS = "/admin/killmaps";
     public static final String ADMIN_CLASSROOMS = "/admin/classrooms";
+    public static final String ADMIN_ASSISTANT = "/admin/assistant";
 
     public static final String ADMIN_PUZZLE_OVERVIEW = "/admin/puzzles";
     public static final String ADMIN_PUZZLE_MANAGEMENT = "/admin/puzzles/management";

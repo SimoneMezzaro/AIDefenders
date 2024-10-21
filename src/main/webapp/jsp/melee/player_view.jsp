@@ -185,6 +185,15 @@
 %>
 
 
+<%
+    Boolean assistantEnabled = (Boolean) request.getAttribute("assistantEnabled");
+    if(assistantEnabled) {
+%>
+    <jsp:include page="../game_components/smart_assistant.jsp"/>
+<%
+    }
+%>
+
 <div class="row">
 
 <% if (openEquivalenceDuel) { %>

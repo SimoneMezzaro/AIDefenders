@@ -303,4 +303,9 @@ public class PuzzleGame extends AbstractGame {
     public boolean isChatEnabled() {
         return false;
     }
+
+    @Override
+    public boolean isAssistantEnabled() {
+        return false; // The smart assistant has not been added to puzzles yet
+    }
 }
